@@ -1,0 +1,11 @@
+#!/bin/bash
+
+TMP_DIR='/tmp/firewall_export'
+
+for f in $(find /usr/share/nethesis/nethserver-firewall-migration -type f -executable)
+do
+   name=$(basename $f)
+   $f > $TMP_DIR/$name.json
+done
+
+rm -rf $TMP_DIR
