@@ -1,0 +1,177 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use JSON;
+use esmith::NetworksDB;
+use NethServer::Firewall;
+
+sub slurp {
+    my $file = shift;
+    my $data;
+    open my $fh, '<', $file or die;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    # trim
+    $data =~ s/^\s+|\s+$//g;
+
+    return $data;
+}
+
+sub role2zone {
+    my $role = shift;
+    if ($role eq 'green') {
+        return 'lan';
+    } elsif ($role eq 'red') {
+        return 'wan';
+    }
+
+    return $role;
+}
+
+my %counter = ('green' => 0, 'red' => '0', 'blue' => 0, 'orange' => 0);
+sub role2interface {
+    my $role = shift;
+    my $ret = $role;
+    $counter{$role} += 1;
+    if ($role eq 'green') {
+        $ret='lan';
+    } elsif ($role eq 'red') {
+        $ret='wan';
+    }
+
+    return $role.$counter{$role};
+}
+
+
+my $db_file = $ARGV[0] || '';
+my $ndb = esmith::NetworksDB->open_ro($db_file);
+my $fw = new NethServer::Firewall();
+
+my %devices;
+my @interfaces;
+my %zones;
+my @forwardings;
+my @aliases;
+my @vlans;
+my @snats;
+
+for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
+    my $addr_file = '/sys/class/net/'.$i->key.'/address';
+    if (-e $addr_file) {
+        $devices{$i->key} = slurp($addr_file);
+    }
+}
+
+for my $i ($ndb->interfaces()) {
+    if ($i->prop('type') eq 'ethernet' && $i->prop('role') =~ m/green|red|orange|blue/) {
+        my %interface = (
+            'zone' => role2zone($i->prop('role')),
+            'interface' => $i->prop('nslabel') ? $i->prop('nslabel') :role2interface($i->prop('role')),
+            'hwaddr' => $devices{$i->key} || '',
+            'ipaddr' => $i->prop('ipaddr') || '',
+            'netmask' => $i->prop('netmask') || '',
+            'proto' => $i->prop('bootproto') eq 'dhcp' ? 'dhcp' : 'static',
+            'gateway' => $i->prop('gateway') ? $i->prop('gateway') : ''
+        );
+        push(@interfaces, \%interface)
+    }
+}
+
+for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
+    my $device = $a->key;
+    $device =~ s/:.*$//;
+    my $hwaddr = $devices{$device};
+    my $interface = '';
+    # search for network name
+    for my $i (@interfaces) {
+        if ($i->{'hwaddr'} eq $hwaddr) {
+            $interface = $i->{'interface'};
+            last;
+        }
+    }
+    next if ($interface eq '');
+    my %alias = (
+        'proto' => 'static',
+        'device' => '@'.$interface,
+        'ipaddr' => $a->prop('ipaddr'),
+        'netmask' => $a->prop('netmask'),
+        'gateway' => $a->prop('gateway') ? $a->prop('gateway') : ''
+    );
+    push(@aliases, \%alias);
+
+    if ($a->prop('FwObjectNat')) {
+        my ($type, $key) = split(/;/, $a->prop('FwObjectNat'));
+        my $addr = $fw->getAddress($a->prop('FwObjectNat'));
+        my %snat = (
+            'name' => $key,
+            'proto' => 'all',
+            'src' => $interface,
+            'src_ip' => $fw->getAddress($a->prop('FwObjectNat')),
+            'target' => 'SNAT',
+            'snat_ip' => $a->prop('ipaddr')
+        );
+        push(@snats, \%snat);
+    }
+}
+
+for my $v ($ndb->get_all_by_prop('type' => 'vlan')) {
+    my ($device, $vid) = split(/\./, $v->key);
+    my $hwaddr = $devices{$device};
+    my %vlan = (
+        'type' => '8021q',
+        'hwaddr' => $devices{$device},
+        'vid' => $vid
+    );
+    push(@vlans, \%vlan);
+}
+
+
+for my $i (@interfaces) {
+    if (exists($zones{$i->{'zone'}})) {
+        my $network = $zones{$i->{'zone'}}->{'network'};
+        push(@$network, $i->{'interface'});
+    } else {
+        my @network = ($i->{'interface'});
+        $zones{$i->{'zone'}} = {
+            'name' => $i->{'zone'},
+            'network' => \@network,
+            'input' => $i->{'zone'} eq 'lan' ? 'ACCEPT' : 'REJECT',
+            'forward' => $i->{'zone'} eq 'lan' ? 'ACCEPT' : 'REJECT',
+            'output' => 'ACCEPT'
+        };
+    }
+}
+
+for my $z (keys(%zones)) {
+    if ($z eq 'blue') {
+        push(@forwardings, {'src' => $z, 'dst' => 'wan'});
+        push(@forwardings, {'src' => 'lan', 'dst' => $z});
+        if (exists($zones{'orange'})) {
+            push(@forwardings, {'src' => $z, 'dst' => 'orange'});
+        }
+    } elsif ($z eq 'orange') {
+        push(@forwardings, {'src' => $z, 'dst' => 'wan'});
+        push(@forwardings, {'src' => 'lan', 'dst' => $z});
+    }
+}
+
+
+my @ztmp = values(%zones);
+print(encode_json({
+            'interfaces' => \@interfaces,
+            'zones' => \@ztmp,
+            'forwardings' => \@forwardings,
+            'aliases' => \@aliases,
+            'vlans' => \@vlans,
+            'snats' => \@snats
+        }));
+
+# TODO:
+# - bridge
+# - bond
+# - hotspot
+# - wan providers
+# - pppoe

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+OUT_DIR='/var/lib/nethserver/firewal-migration'
+
+tmp_dir=$(mktemp -d)
+
+mkdir -p "$tmp_dir/export"
+mkdir -p $OUT_DIR
+
+for f in $(find /usr/share/nethesis/nethserver-firewall-migration -type f -executable)
+do
+   name=$(basename $f)
+   $f > "$tmp_dir/export/$name.json"
+done
+
+pushd $tmp_dir >/dev/null
+tar czf "$OUT_DIR/export.tar.gz" "export"
+popd >/dev/null
+
+rm -rf $tmp_dir
