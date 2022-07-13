@@ -95,7 +95,7 @@ for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
     next if ($interface eq '');
     my %alias = (
         'proto' => 'static',
-        'device' => '@'.$interface,
+        'device' => $interface,
         'ipaddr' => $a->prop('ipaddr'),
         'netmask' => $a->prop('netmask'),
         'gateway' => $a->prop('gateway') ? $a->prop('gateway') : ''
