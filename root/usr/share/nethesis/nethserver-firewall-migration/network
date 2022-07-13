@@ -147,14 +147,14 @@ for my $i (@interfaces) {
 
 for my $z (keys(%zones)) {
     if ($z eq 'blue') {
-        push(@forwardings, {'src' => $z, 'dst' => 'wan'});
-        push(@forwardings, {'src' => 'lan', 'dst' => $z});
+        push(@forwardings, {'src' => $z, 'dest' => 'wan'});
+        push(@forwardings, {'src' => 'lan', 'dest' => $z});
         if (exists($zones{'orange'})) {
-            push(@forwardings, {'src' => $z, 'dst' => 'orange'});
+            push(@forwardings, {'src' => $z, 'dest' => 'orange'});
         }
     } elsif ($z eq 'orange') {
-        push(@forwardings, {'src' => $z, 'dst' => 'wan'});
-        push(@forwardings, {'src' => 'lan', 'dst' => $z});
+        push(@forwardings, {'src' => $z, 'dest' => 'wan'});
+        push(@forwardings, {'src' => 'lan', 'dest' => $z});
     }
 }
 
