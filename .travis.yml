@@ -1,0 +1,46 @@
+---
+language: ruby
+dist: bionic
+services:
+    - docker
+branches:
+    only:
+        - master
+env:
+  global:
+    - DEST_ID=core
+    - NSVER=7
+    - DOCKER_IMAGE=nethserver/makerpms:${NSVER}
+    - >
+        EVARS="
+        -e DEST_ID
+        -e TRAVIS_BRANCH
+        -e TRAVIS_BUILD_ID
+        -e TRAVIS_PULL_REQUEST_BRANCH
+        -e TRAVIS_PULL_REQUEST
+        -e TRAVIS_REPO_SLUG
+        -e TRAVIS_TAG
+        -e NSVER
+        -e ENDPOINTS_PACK
+        "
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq -y software-properties-common
+  - sudo add-apt-repository -y ppa:projectatomic/ppa
+  - sudo apt-get update -q
+  - sudo apt-get install -y buildah
+
+script: |
+      set -e
+      docker run -ti \
+        --name makerpms ${EVARS} \
+        --hostname "b${TRAVIS_BUILD_NUMBER}.nethserver.org" \
+        --volume $PWD:/srv/makerpms/src:ro ${DOCKER_IMAGE} \
+        makerpms-travis *.spec
+      docker commit makerpms nethserver/build
+      docker run -ti ${EVARS} \
+        -e SECRET \
+        -e SECRET_URL \
+        -e AUTOBUILD_SECRET \
+        -e AUTOBUILD_SECRET_URL \
+        nethserver/build uploadrpms-travis
