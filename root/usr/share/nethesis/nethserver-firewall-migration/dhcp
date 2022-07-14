@@ -1,0 +1,115 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use JSON;
+use NetAddr::IP;
+use esmith::NetworksDB;
+use esmith::ConfigDB;
+use esmith::HostsDB;
+
+sub slurp {
+    my $file = shift;
+    my $data;
+    open my $fh, '<', $file or die;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    # trim
+    $data =~ s/^\s+|\s+$//g;
+
+    return $data;
+}
+
+my $ddb = esmith::ConfigDB->open_ro('dhcp');
+my $ndb = esmith::NetworksDB->open_ro();
+my $hdb = esmith::HostsDB->open_ro();
+
+my @servers;
+my %general;
+my @reservations;
+
+my $tot_limit = 0;
+foreach ($ddb->get_all_by_prop('type' => 'range')) {
+    my $interface = $_->key;
+    my $netmask = $ndb->get($interface)->prop('netmask') || next;
+    my $ipaddr = $ndb->get($interface)->prop('ipaddr') || next;
+    my $start = $_->prop('DhcpRangeStart') || next;
+    my $end = $_->prop('DhcpRangeEnd') || next;
+
+    my $status = $_->prop('status') || 'disabled';
+
+    my $addr_file = '/sys/class/net/'.$interface.'/address';
+    my $hwaddr = slurp($addr_file);
+
+    my $start_ip = new NetAddr::IP($start);
+    my $end_ip = new NetAddr::IP($end);
+    my $limit = $end_ip->numeric - $start_ip->numeric;
+    $tot_limit += $limit;
+    my $ltime = int($_->prop('DhcpLeaseTime') || '86400') / 60;
+    my @options;
+
+    my $router = $_->prop('DhcpGatewayIP') || '';
+    if ($router ne '') {
+        push(@options, "3,$router");
+    }
+
+    my $dns_server = $_->prop('DhcpDNS') || '';
+    if ($dns_server ne '') {
+        push(@options, "6,$dns_server");
+    }
+
+    my $ntp_server = $_->prop('DhcpNTP') || '';
+    if ($ntp_server ne '') {
+        foreach (split(',',$ntp_server)) {
+            push(@options, "4,$_");
+        }
+    }
+
+    my $wins_server = $_->prop('DhcpWINS') || '';
+    if ($wins_server ne '') {
+        foreach (split(',',$wins_server)) {
+            push(@options, "44,$_");
+        }
+    }
+
+    my $tftp_server = $_->prop('DhcpTFTP') || '';
+    if ($tftp_server ne '') {
+        foreach (split(',',$tftp_server)) {
+            push(@options, "66,$_");
+        }
+    }
+
+    my %server = (
+        "ignore" => ($status eq 'disabled') ? 1 : 0,
+        "hwaddr" => $hwaddr,
+        "start" => $start,
+        "limit" => $limit,
+        "leasetime" => $ltime."m",
+        "domain" => $_->prop('DhcpDomain') || '',
+        "dhcp_option" => \@options,
+    );
+    push(@servers, \%server);
+
+}
+
+foreach ($hdb->get_all_by_prop('type'=>'local')) {
+    $_->prop('MacAddress') || next;
+    push(@reservations, {
+        'name' => $_->key,
+        'ip' => $_->prop('IpAddress'),
+        'mac' => $_->prop('MacAddress'),
+        'description' => $_->prop('Description')
+    });
+    $tot_limit++;
+}
+
+$general{'dhcpleasemax'} = $tot_limit;
+
+print(encode_json({
+            'general' => \%general,
+            'servers' => \@servers,
+            'reservations' => \@reservations
+        }));
+
