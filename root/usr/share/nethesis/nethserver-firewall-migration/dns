@@ -1,0 +1,67 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+use esmith::HostsDB;
+use esmith::NetworksDB;
+
+sub slurp {
+    my $file = shift;
+    my $data;
+    open my $fh, '<', $file or die;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    # trim
+    $data =~ s/^\s+|\s+$//g;
+
+    return $data;
+}
+
+my $cdb = esmith::ConfigDB->open_ro();
+my $hdb = esmith::HostsDB->open_ro();
+my $ndb = esmith::NetworksDB->open_ro();
+
+my %general;
+my @hosts;
+my @forwardings;
+
+$general{'hostname'} = $cdb->get_value('SystemName');
+$general{'domain'} = $cdb->get_value('DomainName');
+$general{'cachesize'} = $cdb->get_prop('dnsmasq', 'CacheSize');
+$general{'dhcp_boot'} = $cdb->get_prop('dnsmasq', 'dhcp-boot');
+$general{'enable_tftp'} = $cdb->get_prop('dnsmasq', 'tftp-status') eq 'enabled' ? 1 : 0; 
+
+foreach (split(/,/, $cdb->get_prop('dnsmasq', 'DomainRedirection') || '')) {
+    my ($domain, $address) = split(/:/, $_);
+    push(@forwardings, "/$domain/$address");
+}
+
+push(@forwardings, split(/,/, $cdb->get_prop('dns', 'NameServers') || ''));
+
+# Collect DNS hosts
+foreach ($hdb->get_all_by_prop('type'=>'remote')) {
+    push(@hosts, {
+        'name' => $_->key,
+        'ip' => $_->prop('IpAddress'),
+        'description' => $_->prop('Description')
+    });
+}
+
+foreach my $h ($hdb->get_all_by_prop('type'=>'self')) {
+    foreach ($ndb->green()) {
+        push(@hosts, {
+            'name' => $h->key,
+            'ip' => $_->prop('ipaddr'),
+        });
+    }
+}
+
+print(encode_json({
+            'general' => \%general,
+            'forwardings' => \@forwardings,
+            'hosts' => \@hosts
+        }));
