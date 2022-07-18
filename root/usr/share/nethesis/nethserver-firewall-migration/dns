@@ -33,7 +33,8 @@ $general{'hostname'} = $cdb->get_value('SystemName');
 $general{'domain'} = $cdb->get_value('DomainName');
 $general{'cachesize'} = $cdb->get_prop('dnsmasq', 'CacheSize');
 $general{'dhcp_boot'} = $cdb->get_prop('dnsmasq', 'dhcp-boot');
-$general{'enable_tftp'} = $cdb->get_prop('dnsmasq', 'tftp-status') eq 'enabled' ? 1 : 0; 
+$general{'enable_tftp'} = $cdb->get_prop('dnsmasq', 'tftp-status') eq 'enabled' ? 1 : 0;
+$general{'allservers'} = 1;
 
 foreach (split(/,/, $cdb->get_prop('dnsmasq', 'DomainRedirection') || '')) {
     my ($domain, $address) = split(/:/, $_);
