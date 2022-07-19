@@ -28,6 +28,7 @@ my $ndb = esmith::NetworksDB->open_ro();
 my %general;
 my @hosts;
 my @forwardings;
+my @addresses;
 
 $general{'hostname'} = $cdb->get_value('SystemName');
 $general{'domain'} = $cdb->get_value('DomainName');
@@ -43,13 +44,22 @@ foreach (split(/,/, $cdb->get_prop('dnsmasq', 'DomainRedirection') || '')) {
 
 push(@forwardings, split(/,/, $cdb->get_prop('dns', 'NameServers') || ''));
 
-# Collect DNS hosts
+# Collect DNS hosts and wildcard domains
 foreach ($hdb->get_all_by_prop('type'=>'remote')) {
-    push(@hosts, {
-        'name' => $_->key,
-        'ip' => $_->prop('IpAddress'),
-        'description' => $_->prop('Description')
-    });
+    my $wildcard =  $_->prop('WildcardMode') || 'disabled';
+    if ($wildcard eq 'enabled') {
+        push(@addresses, {
+                'name' => $_->key,
+                'ip' => $_->prop('IpAddress'),
+                'description' => $_->prop('Description')
+            });
+    } else {
+        push(@hosts, {
+                'name' => $_->key,
+                'ip' => $_->prop('IpAddress'),
+                'description' => $_->prop('Description')
+            });
+    }
 }
 
 foreach my $h ($hdb->get_all_by_prop('type'=>'self')) {
@@ -64,5 +74,6 @@ foreach my $h ($hdb->get_all_by_prop('type'=>'self')) {
 print(encode_json({
             'general' => \%general,
             'forwardings' => \@forwardings,
-            'hosts' => \@hosts
+            'hosts' => \@hosts,
+            'addresses' => \@addresses
         }));
