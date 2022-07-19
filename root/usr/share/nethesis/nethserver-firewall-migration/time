@@ -1,0 +1,18 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+
+my $cdb = esmith::ConfigDB->open_ro();
+
+my %ntp;
+
+my $enabled = $cdb->get_prop('chronyd', 'status') eq 'enabled' ? 1 : 0;
+$ntp{'enabled'} = $enabled;
+my @servers = split(/,/, ($cdb->get_prop('chronyd', 'NTPServer') || ''));
+$ntp{'server'} = \@servers;
+$ntp{'enable_server'} = ($enabled && $cdb->get_prop('chronyd', 'access') eq 'green') ? 1 : 0;
+
+print(encode_json({'timezone' => $cdb->get_value('TimeZone'), 'ntp' => \%ntp}));
