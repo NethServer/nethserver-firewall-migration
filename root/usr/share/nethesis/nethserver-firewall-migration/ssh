@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+
+sub raw_slurp {
+    my $file = shift;
+    my $data;
+    open my $fh, '<', $file or die;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    return $data;
+}
+
+my $cdb = esmith::ConfigDB->open_ro();
+
+my %ssh;
+
+my $password_auth = $cdb->get_prop('sshd', 'PasswordAuthentication') eq 'yes' ? 1 : 0;
+my $root_login = $cdb->get_prop('sshd', 'PermitRootLogin') eq 'yes' ? 1 : 0;
+$ssh{'PasswordAuth'} = $password_auth;
+$ssh{'RootPasswordAuth'} = ($password_auth && $root_login) ? '1' : 0;
+$ssh{'Port'} = $cdb->get_prop('sshd', 'TCPPort');
+$ssh{'MaxAuthTries'} =  $cdb->get_prop('sshd', 'MaxAuthTries');
+$ssh{'GatewayPorts'} = 1; # always enable forwards
+$ssh{'RootLogin'} = 1; # always enable root login, this is the only available user
+
+print(encode_json({
+            'ssh' => \%ssh, 
+            'authorized_keys' => raw_slurp('/root/.ssh/authorized_keys'),
+            'ssh_from_wan' => ($cdb->get_prop('sshd', 'access') =~ m/red/) ? 1 : 0
+        }));
