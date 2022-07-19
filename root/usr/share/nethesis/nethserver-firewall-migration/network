@@ -46,8 +46,7 @@ sub role2interface {
 }
 
 
-my $db_file = $ARGV[0] || '';
-my $ndb = esmith::NetworksDB->open_ro($db_file);
+my $ndb = esmith::NetworksDB->open_ro();
 my $fw = new NethServer::Firewall();
 
 my %devices;
