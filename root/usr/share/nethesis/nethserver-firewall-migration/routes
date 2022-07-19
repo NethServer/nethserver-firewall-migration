@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+
+sub slurp {
+    my $file = shift;
+    my $data;
+    open my $fh, '<', $file or die;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    # trim
+    $data =~ s/^\s+|\s+$//g;
+
+    return $data;
+}
+
+my $rdb = esmith::ConfigDB->open_ro('routes');
+
+my @routes;
+
+for my $r ($rdb->get_all_by_prop('type' => 'static')) {
+    my $interface;
+    my $addr_file = '/sys/class/net/'.$r->prop('Device').'/address';
+    if (-e $addr_file) {
+        $interface = slurp($addr_file);
+    }
+    next if (!$interface);
+    push(@routes, {
+        'interface' => $interface,
+        'target' => $r->key,
+        'gateway' =>  $r->prop('Router'),
+        'metric' =>  $r->prop('Metric') || 0,
+        'description' => $r->prop('Description') || ''
+    });
+}
+
+print(encode_json({'routes' => \@routes}));
