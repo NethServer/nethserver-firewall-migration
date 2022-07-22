@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+
+my $cdb = esmith::ConfigDB->open_ro();
+
+my %subscription;
+
+$subscription{'system_id'}= $cdb->get_prop('subscription', 'SystemId') || '';
+$subscription{'secret'} = $cdb->get_prop('subscription', 'Secret') || '';
+
+print(encode_json({'subscription' => \%subscription}));
