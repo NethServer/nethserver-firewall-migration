@@ -1,0 +1,61 @@
+#!/usr/bin/perl
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+use NethServer::Firewall;
+
+my $cdb = esmith::ConfigDB->open_ro();
+my $fw = new NethServer::Firewall();
+
+my %ts_ip;
+my %ts_dns;
+
+my @ip_categories;
+foreach (split(/,/, ($cdb->get_prop('blacklist', 'Categories') || ''))) {
+    # truncate category name to overcome Nextsecurity limit
+    $_ =~ s/yoroi_souspicious/yoroi_susp/;
+    push(@ip_categories, $_);
+}
+$ts_ip{'categories'} = \@ip_categories;
+$ts_ip{'status'} = ($cdb->get_prop('blacklist', 'status') || '') eq 'enabled' ? '1' : '0';
+$ts_ip{'allow'} = [split(/,/, ($cdb->get_prop('blacklist', 'Whitelist') || ''))];
+
+my @bypass;
+my @dns_categories;
+foreach (split(/,/, ($cdb->get_prop('ftl', 'Categories') || ''))) {
+    # truncate category name to overcome Nextsecurity limit
+    $_ =~ s/yoroi_suspicious/yoroi_susp/;
+    push(@dns_categories, $_);
+}
+
+$ts_dns{'categories'} = \@dns_categories;
+$ts_dns{'status'} = ($cdb->get_prop('ftl', 'status') || '') eq 'enabled' ? '1' : '0';
+$ts_dns{'bypass'} = \@bypass;
+
+foreach (split(/,/, ($cdb->get_prop('ftl', 'Bypass') || ''))) {
+    push(@bypass,$fw->getAddress($_));
+}
+
+print(encode_json({'ts-ip' => \%ts_ip, 'ts-dns' => \%ts_dns}));
