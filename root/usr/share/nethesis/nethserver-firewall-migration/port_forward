@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+use NethServer::Firewall;
+
+my $pdb = esmith::ConfigDB->open_ro('portforward');
+my $cdb = esmith::ConfigDB->open_ro();
+my $fw = new NethServer::Firewall();
+
+my $reflection = $cdb->get_prop('firewall', 'HairpinNat') eq 'enabled' ? '1' : '0';
+my @redirects;
+
+my $counter = 1;
+for ($pdb->get_all_by_prop('type', 'pf')) {
+    my $proto = $_->prop('Proto');
+    $proto =~ s/,/ /g;
+    my @allow = split(/,/,$_->prop('Allow') || '');
+    
+    push(@redirects, {
+         'target' => 'DNAT',
+         'proto' => $proto,
+         'src_port' => $_->prop('Src'),
+         'dest_port' => $_->prop('Dst'),
+         'dest_ip' => ,$fw->getAddress($_->prop('DstHost')),
+         'description' => ,$_->prop('Description'),
+         'enabled' => $_->prop('status') eq 'enabled' ? '1' : '0',
+         'src_dip' => $_->prop('OriDst') || '',
+         'name' => , $_->prop('Description') || "pf$counter",
+         'reflection' => $reflection,
+         'src_ip' => \@allow,
+         'key' => "pf$counter"
+    });
+    $counter++;
+}
+
+
+print(encode_json({'redirects' => \@redirects}));
