@@ -42,7 +42,7 @@ for ($pdb->get_all_by_prop('type', 'pf')) {
     push(@redirects, {
          'target' => 'DNAT',
          'proto' => $proto,
-         'src_port' => $_->prop('Src'),
+         'src_dport' => $_->prop('Src'),
          'dest_port' => $_->prop('Dst'),
          'dest_ip' => ,$fw->getAddress($_->prop('DstHost')),
          'description' => ,$_->prop('Description'),
