@@ -50,9 +50,9 @@ foreach (split(/,/, ($cdb->get_prop('ftl', 'Categories') || ''))) {
     push(@dns_categories, $_);
 }
 
-$ts_dns{'categories'} = \@dns_categories;
-$ts_dns{'status'} = ($cdb->get_prop('ftl', 'status') || '') eq 'enabled' ? '1' : '0';
-$ts_dns{'bypass'} = \@bypass;
+$ts_dns{'adb_sources'} = \@dns_categories;
+$ts_dns{'adb_enabled'} = ($cdb->get_prop('ftl', 'status') || '') eq 'enabled' ? '1' : '0';
+$ts_dns{'adb_bypass'} = \@bypass;
 
 foreach (split(/,/, ($cdb->get_prop('ftl', 'Bypass') || ''))) {
     push(@bypass,$fw->getAddress($_));
