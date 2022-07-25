@@ -56,5 +56,4 @@ for ($pdb->get_all_by_prop('type', 'pf')) {
     $counter++;
 }
 
-
 print(encode_json({'redirects' => \@redirects}));
