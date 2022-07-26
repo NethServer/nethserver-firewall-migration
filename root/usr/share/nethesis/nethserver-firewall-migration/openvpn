@@ -1,0 +1,125 @@
+#!/usr/bin/perl
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethrw@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+use NethServer::Firewall;
+
+sub slurp {
+    my $file = shift;
+    if (! -f $file) {
+        return '';
+    }
+    my $data;
+    open my $fh, '<', $file or die $!;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    return $data;
+}
+
+my $vdb = esmith::ConfigDB->open_ro('vpn');
+my $cdb = esmith::ConfigDB->open_ro();
+my $fw = new NethServer::Firewall();
+
+my @users;
+my %certs;
+my %ca;
+my %rw;
+my %rw_options;
+
+$ca{'ca.crt'} = slurp('/etc/pki/tls/certs/NSRV.crt');
+$ca{'srv.crt'} = slurp('/etc/pki/tls/certs/NSRV.crt');
+$ca{'src.key'} = slurp('/etc/pki/tls/private/NSRV.key');
+$ca{'dh.pem'} = slurp('/var/lib/nethserver/certs/dh1024.pem');
+$ca{'crl.pem'} = slurp('/var/lib/nethserver/certs/crl.pem');
+$ca{'ca_conf'} = slurp('/var/lib/nethserver/certs/ca.cnf');
+$ca{'certindex'} = slurp('/var/lib/nethserver/certs/certindex');
+$ca{'certindex.attr'} = slurp('/var/lib/nethserver/certs/certindex.attr');
+$ca{'crlnumber'} = slurp('/var/lib/nethserver/certs/crlnumber');
+$ca{'serial'} = slurp('/var/lib/nethserver/certs/serial');
+
+my @push_options;
+$rw_options{'push'} = \@push_options;
+
+$rw{'options'} = \%rw_options;
+$rw{'ca'} = \%ca;
+
+# Parse roadwarrior config
+open my $fh, '<', '/etc/openvpn/host-to-net.conf';
+while( my $line = <$fh>) {
+    next if ($line =~ m/^$/ or $line =~ m/\s*^#/);
+
+    my @tmp = split(/\s+/, $line);
+    my $nparts = scalar @tmp;
+    my $option = shift(@tmp);
+    # exclude options which will be remapped
+    next if $option =~ m/status|cd|up|down|syslog|script\-security|dh|key|crl\-verify|log\-append|cert|ca|client\-connect|client\-disconnect|management/;
+
+    if ($nparts == 1) {
+        $rw_options{$option} = '1';
+    } elsif ($nparts) {
+        if ($option eq 'push') {
+            push(@push_options, \@tmp);
+        } else {
+            $rw_options{$option} = \@tmp;
+        }
+    }
+    
+}
+close $fh;
+
+# Parse indexes
+open $fh, '<', '/var/lib/nethserver/certs/certindex';
+while( my $line = <$fh>) {
+    my ($status, $expiration, $revoke, $serial, $unk, $cn) = split(/\t/,$line);
+    next if $status ne 'V';
+
+    $cn =~ s/^\s+|\s+$//g;
+    my @tmp = split(/\//, $cn);
+    @tmp = split(/=/,$tmp[6]);
+    $cn = $tmp[1];
+
+    $certs{$cn} = {
+        'crt' => slurp("/var/lib/nethserver/certs/$cn.crt"),
+        'key' => slurp("/var/lib/nethserver/certs/$cn.key")
+    };
+}
+close $fh;
+
+for ($vdb->get_all_by_prop('type', 'vpn')) {
+    my $status = $_->prop('status') || next;
+    push(@users, {
+            'name' => $_->key,
+            'enabled' => $status eq 'enabled' ? '1' : '0',
+            'ipaddr' => $_->prop('OpenVpnIp') || '',
+            'crt' => $certs{$_->key}{'crt'},
+            'key' => $certs{$_->key}{'key'},
+    });
+}
+
+
+# print(encode_json({'certs' => \%certs}));
+ print(encode_json({'users' => \@users, 'rw' => \%rw}));
