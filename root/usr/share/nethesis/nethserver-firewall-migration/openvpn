@@ -52,10 +52,10 @@ my %rw_options;
 
 $ca{'ca.crt'} = slurp('/etc/pki/tls/certs/NSRV.crt');
 $ca{'srv.crt'} = slurp('/etc/pki/tls/certs/NSRV.crt');
-$ca{'src.key'} = slurp('/etc/pki/tls/private/NSRV.key');
+$ca{'srv.key'} = slurp('/etc/pki/tls/private/NSRV.key');
 $ca{'dh.pem'} = slurp('/var/lib/nethserver/certs/dh1024.pem');
 $ca{'crl.pem'} = slurp('/var/lib/nethserver/certs/crl.pem');
-$ca{'ca_conf'} = slurp('/var/lib/nethserver/certs/ca.cnf');
+$ca{'ca.cnf'} = slurp('/var/lib/nethserver/certs/ca.cnf');
 $ca{'certindex'} = slurp('/var/lib/nethserver/certs/certindex');
 $ca{'certindex.attr'} = slurp('/var/lib/nethserver/certs/certindex.attr');
 $ca{'crlnumber'} = slurp('/var/lib/nethserver/certs/crlnumber');
