@@ -82,7 +82,9 @@ while( my $line = <$fh>) {
         $rw_options{$option} = '1';
     } elsif ($nparts) {
         if ($option eq 'push') {
-            push(@push_options, join(" ",@tmp));
+            my $v = join(" ",@tmp);
+            $v =~ s/"//g; # remove extra quotes
+            push(@push_options, $v);
         } else {
             $rw_options{$option} = join(" ",@tmp);
         }
