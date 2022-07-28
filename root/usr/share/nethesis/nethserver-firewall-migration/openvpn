@@ -90,6 +90,7 @@ while( my $line = <$fh>) {
     
 }
 close $fh;
+$rw{'options'}{'enabled'} = $cdb->get_prop('openvpn@host-to-net', 'status') eq 'enabled' ? '1' : '0';
 
 # Parse indexes
 open $fh, '<', '/var/lib/nethserver/certs/certindex';
