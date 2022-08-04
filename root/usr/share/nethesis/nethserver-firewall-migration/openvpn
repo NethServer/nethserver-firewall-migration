@@ -76,7 +76,7 @@ while( my $line = <$fh>) {
     my $nparts = scalar @tmp;
     my $option = shift(@tmp);
     # exclude options which will be remapped
-    next if $option =~ m/status|cd|up|down|syslog|script\-security|dh|key|crl\-verify|log\-append|cert|ca|client\-connect|client\-disconnect|management/;
+    next if $option =~ m/status|cd|up|down|syslog|script\-security|dh|key|crl\-verify|log\-append|cert|ca|client\-connect|client\-disconnect|management|compression/;
 
     if ($nparts == 1) {
         $rw_options{$option} = '1';
