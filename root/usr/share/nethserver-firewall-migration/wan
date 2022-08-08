@@ -26,12 +26,33 @@ use JSON;
 use esmith::NetworksDB;
 use esmith::ConfigDB;
 
+sub slurp {
+    my $file = shift;
+    my $data;
+    open my $fh, '<', $file or die;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    # trim
+    $data =~ s/^\s+|\s+$//g;
+
+    return $data;
+}
 
 my $cdb = esmith::ConfigDB->open_ro();
 my $ndb = esmith::NetworksDB->open_ro();
 
 my @providers;
 my %general;
+my %devices;
+
+for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
+    my $addr_file = '/sys/class/net/'.$i->key.'/address';
+    if (-e $addr_file) {
+        $devices{$i->key} = slurp($addr_file);
+    }
+}
 
 my @track_ip = split(/,/, $cdb->get_prop('firewall', 'CheckIP'));
 $general{'mode'} = $cdb->get_prop('firewall', 'WanMode') || 'balanced';
@@ -40,14 +61,15 @@ $general{'reliability'} = scalar(@track_ip);
 $general{'interval'} = $cdb->get_prop('firewall', 'PingInterval') || '5';
 
 for my $provider ($ndb->get_all_by_prop('type' => 'provider')) {
+    my $device = $devices{$provider->prop('interface')} || next;
     push(@providers, {
         'name' => $provider->key,
-        'weight' => $provider->prop('weight'),
-        'device' => $provider->prop('interface')
+        'weight' => $provider->prop('weight') || '1',
+        'device' => $device
     })
 }
 
 print(encode_json({
             'providers' => \@providers,
-            'geeneral' => \%general,
+            'general' => \%general,
         }));
