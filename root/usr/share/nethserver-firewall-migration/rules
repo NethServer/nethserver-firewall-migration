@@ -1,0 +1,140 @@
+#!/usr/bin/perl
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+use strict;
+use warnings;
+use JSON;
+use esmith::NetworksDB;
+use esmith::ConfigDB;
+use NethServer::Firewall;
+
+sub slurp {
+    my $file = shift;
+    my $data;
+    open my $fh, '<', $file or die;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    # trim
+    $data =~ s/^\s+|\s+$//g;
+
+    return $data;
+}
+
+sub rename_zone {
+    my $zone = shift;
+    if ($zone eq 'loc') {
+        return 'lan';
+    } elsif ($zone eq 'net') {
+        return 'wan';
+    } elsif ($zone eq '$FW') {
+        return '';
+    } elsif ($zone eq 'ovpn') {
+        return 'openvpnrw';
+    }
+    return $zone;
+}
+
+
+my $cdb = esmith::ConfigDB->open_ro();
+my $fdb = esmith::ConfigDB->open_ro('fwrules');
+my $fw = new NethServer::Firewall();
+
+my @rules;
+
+#
+#                                Time=
+                                    
+for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
+    my $action = $rule->prop('Action');
+    my $service = $rule->prop('Service') || 'any';
+    # skip multiwan and QoS rules
+    next if ($action =~ m/^provider|class;/);
+    # skip ndpi rules
+    next if ($service =~ m/^ndpi;/);
+    my $src_zone = '';
+    my $src_addr = $fw->getAddress($rule->prop('Src'));
+    if ($src_addr) {
+         ($src_zone, $src_addr) = split(/:/,$fw->getZone($src_addr));
+    } 
+    my $dst_zone = '';
+    my $dst_addr = $fw->getAddress($rule->prop('Dst'));
+    if ($dst_addr) {
+         ($dst_zone, $dst_addr) = split(/:/,$fw->getZone($dst_addr));
+    }
+    my %time;
+    if ($rule->prop('Time')) {
+        # Example of time string: utc&weekdays=Sun,Mon,Tue,Wed,Thu,Fri,Sat&timestart=22:00&timestop=05:00
+        my ($utc, $weekdays, $timestart, $timestop) = split(/&/,  $fw->getTime($rule->prop('Time')));
+        $time{'utc_time'} = 1;
+        $weekdays =~ s/^weekdays=//;
+        $weekdays =~ s/,/ /g;
+        $time{'weekdays'} = $weekdays;
+        $timestart =~ s/^timestart=//;
+        $time{'start_time'} = $timestart.":00"; 
+        $timestop =~ s/^timestop=//;
+        $time{'stop_time'} = $timestop.":00"; 
+    }
+    my %common = (
+       'target' => uc($action),
+       'enabled' => $rule->prop('status') eq 'enabled' ? '1' : '0',
+       'position' => int($rule->prop('Position')),
+        # set the bit logging field, 0 for for filter table, 1 for mangle, empty for no log
+       'log' => $rule->prop('Log') ne 'none' ? '0' : '',
+       'src' => rename_zone($src_zone),
+       'src_ip' => $src_addr ? $src_addr : '',
+       'dest' => rename_zone($dst_zone),
+       'dest_ip' => $dst_addr ? $dst_addr : '',
+       %time
+    );
+    if ($service ne 'any') {
+        my %service = $fw->getPorts($service);
+        # generate one rule for each protocol
+        foreach my $k (keys(%service)) {
+            my $desc = $rule->prop('Description') || $rule->key."_migrated";
+            $desc = $desc."_$k";
+            my $ports = $service{$k};
+            $ports =~ s/,/ /g;
+            my %mrule = (
+                %common,
+                'key' => $rule->key."_$k",
+                'name' => $desc,
+                'proto' => $k,
+                'dest_port' => $ports
+            );
+            push(@rules, \%mrule);
+        }
+    } else {
+        my %mrule = (
+            %common,
+            'key' => $rule->key,
+            "name" => $rule->prop('Description') || $rule->key."_migrated",
+            'proto' => 'all',
+            'dest_port' => ''
+        );
+        push(@rules, \%mrule);
+    }
+}
+
+@rules = sort { $a->{'position'} <=> $b->{'position'} } @rules;
+print(encode_json({'rules' => \@rules}));
