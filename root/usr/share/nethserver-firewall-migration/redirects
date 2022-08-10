@@ -38,7 +38,7 @@ for ($pdb->get_all_by_prop('type', 'pf')) {
     my $proto = $_->prop('Proto');
     $proto =~ s/,/ /g;
     my @allow = split(/,/,$_->prop('Allow') || '');
-    
+    my $log = $_->prop('Log') || 'none';
     push(@redirects, {
          'target' => 'DNAT',
          'proto' => $proto,
@@ -51,6 +51,7 @@ for ($pdb->get_all_by_prop('type', 'pf')) {
          'name' => , $_->prop('Description') || "pf$counter",
          'reflection' => $reflection,
          'src_ip' => \@allow,
+         'log' => $log eq 'none' ? '0' : '1',
          'key' => "pf$counter"
     });
     $counter++;
