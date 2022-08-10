@@ -99,8 +99,7 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
        'target' => uc($action),
        'enabled' => $rule->prop('status') eq 'enabled' ? '1' : '0',
        'position' => int($rule->prop('Position')),
-        # set the bit logging field, 0 for for filter table, 1 for mangle, empty for no log
-       'log' => $rule->prop('Log') ne 'none' ? '0' : '',
+       'log' => $rule->prop('Log') ne 'none' ? '1' : '0',
        'src' => rename_zone($src_zone),
        'src_ip' => $src_addr ? $src_addr : '',
        'dest' => rename_zone($dst_zone),
