@@ -19,12 +19,13 @@ Upload the ``export.tar.gz`` to Nextsecurity and execute:
 
 ::
 
-  firewall-import export.tar.gz
+  ns-import export.tar.gz
 
 Not migrated
 ============
 
-The following configurations will not be migrated:
+The following featuers will not be exported:
 
 - Web proxy (Squid)
 - Suricata
+- UPS (NUT)
