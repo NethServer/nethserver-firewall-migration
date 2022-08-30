@@ -73,12 +73,12 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
     # skip ndpi rules
     next if ($service =~ m/^ndpi;/);
     my $src_zone = '';
-    my $src_addr = $fw->getAddress($rule->prop('Src'));
+    my $src_addr = $fw->getAddress($rule->prop('Src'), 1);
     if ($src_addr) {
          ($src_zone, $src_addr) = split(/:/,$fw->getZone($src_addr));
     } 
     my $dst_zone = '';
-    my $dst_addr = $fw->getAddress($rule->prop('Dst'));
+    my $dst_addr = $fw->getAddress($rule->prop('Dst'), 1);
     if ($dst_addr) {
          ($dst_zone, $dst_addr) = split(/:/,$fw->getZone($dst_addr));
     }
