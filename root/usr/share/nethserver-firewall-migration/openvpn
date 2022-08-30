@@ -50,6 +50,10 @@ my %ca;
 my %rw;
 my %rw_options;
 
+if (! -f '/etc/openvpn/host-to-net.conf') {
+    exit 0;
+}
+
 $ca{'ca.crt'} = slurp('/etc/pki/tls/certs/NSRV.crt');
 $ca{'srv.crt'} = slurp('/etc/pki/tls/certs/NSRV.crt');
 $ca{'srv.key'} = slurp('/etc/pki/tls/private/NSRV.key');
@@ -124,5 +128,4 @@ for ($vdb->get_all_by_prop('type', 'vpn')) {
 }
 
 
-# print(encode_json({'certs' => \%certs}));
- print(encode_json({'users' => \@users, 'rw' => \%rw}));
+print(encode_json({'users' => \@users, 'rw' => \%rw}));
