@@ -65,7 +65,6 @@ sub role2interface {
     return $role.$counter{$role};
 }
 
-
 my $ndb = esmith::NetworksDB->open_ro();
 my $fw = new NethServer::Firewall();
 
@@ -76,6 +75,7 @@ my @forwardings;
 my @aliases;
 my @vlans;
 my @snats;
+my @bridges;
 
 for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
     my $addr_file = '/sys/class/net/'.$i->key.'/address';
@@ -86,16 +86,20 @@ for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
 
 for my $i ($ndb->interfaces()) {
     my %interface;
-    if ($i->prop('type') eq 'ethernet' && $i->prop('role') =~ m/green|red|orange|blue/) {
+    if ($i->prop('type') =~ m/ethernet|bridge/ && $i->prop('role') =~ m/green|red|orange|blue/) {
         %interface = (
             'zone' => role2zone($i->prop('role')),
             'interface' => $i->prop('nslabel') ? $i->prop('nslabel') : role2interface($i->prop('role')),
-            'hwaddr' => $devices{$i->key} || '',
             'ipaddr' => $i->prop('ipaddr') || '',
             'netmask' => $i->prop('netmask') || '',
             'proto' => $i->prop('bootproto') eq 'dhcp' ? 'dhcp' : 'static',
             'gateway' => $i->prop('gateway') ? $i->prop('gateway') : ''
         );
+        if ($i->prop('type') eq 'ethernet') {
+            $interface{'hwaddr'} = $devices{$i->key} || '';
+        } elsif ($i->prop('type') eq 'bridge') {
+            $interface{'device'} = $i->key;
+        }
     } elsif ($i->prop('type') eq 'xdsl' && $i->prop('role') eq 'red') {
         my @pppoe = $ndb->get_all_by_prop('role' => 'pppoe');
         next if not @pppoe;
@@ -170,6 +174,25 @@ for my $v ($ndb->get_all_by_prop('type' => 'vlan')) {
     push(@vlans, \%vlan);
 }
 
+for my $b ($ndb->get_all_by_prop('type' => 'bridge')) {
+    my @ports;
+    for my $i ($ndb->get_all_by_prop('role' => 'bridged')) {
+        if ($i->prop('bridge') eq $b->key) {
+            my $type = $i->prop('type');
+            if ($type eq 'ethernet') {
+                push(@ports, {'type'=> $type, 'hwaddr' => $devices{$i->key}});
+            } elsif ($type eq 'vlan') {
+                my ($eth, $vid) = split(/\./, $i->key);
+                push(@ports, {'type'=> $type, 'hwaddr' => $devices{$eth}, 'vid' => $vid});
+            }
+        }
+    }
+    my %bridge = (
+        'ports' => \@ports,
+        'name' => $b->key
+    );
+    push(@bridges, \%bridge);
+}
 
 for my $i (@interfaces) {
     if (exists($zones{$i->{'zone'}})) {
@@ -208,12 +231,6 @@ print(encode_json({
             'forwardings' => \@forwardings,
             'aliases' => \@aliases,
             'vlans' => \@vlans,
-            'snats' => \@snats
+            'snats' => \@snats,
+            'bridges' => \@bridges
         }));
-
-# TODO:
-# - bridge
-# - bond
-# - hotspot
-# - wan providers
-# - pppoe
