@@ -104,11 +104,18 @@ for my $i ($ndb->interfaces()) {
             'interface' => $i->prop('provider') ? $i->prop('provider') : role2interface('red'),
             'username' => $i->prop('user') || '',
             'password' => $i->prop('Password') || '',
-            'hwaddr' => $devices{$pppoe[0]->key},
             'proto' => 'pppoe',
             'ipv6' => '0',
             'keepalive' => '100 5'
         );
+        my $device = $pppoe[0];
+        if ($device->prop('type') eq 'vlan') {
+            my ($eth, $vid) = split(/\./, $device->key);
+            $interface{'hwaddr'} = $devices{$eth};
+            $interface{'vid'} = $vid;
+        } else {
+            $interface{'hwaddr'} = $devices{$device->key};
+        }
     }
     if (%interface) {
         push(@interfaces, \%interface)
