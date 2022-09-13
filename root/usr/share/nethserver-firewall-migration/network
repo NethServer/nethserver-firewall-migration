@@ -129,25 +129,37 @@ for my $i ($ndb->interfaces()) {
 for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
     my $device = $a->key;
     $device =~ s/:.*$//;
-    my $hwaddr = $devices{$device};
+    my $parent = $ndb->get($device);
+    next if !$parent;
     my $interface = '';
-    # search for network name
-    for my $i (@interfaces) {
-        if ($i->{'hwaddr'} eq $hwaddr) {
-            $interface = $i->{'interface'};
-            last;
-        }
-    }
-    next if ($interface eq '');
     my %alias = (
         'proto' => 'static',
-        'device' => $interface,
         'ipaddr' => $a->prop('ipaddr'),
         'netmask' => $a->prop('netmask'),
         'gateway' => $a->prop('gateway') ? $a->prop('gateway') : ''
     );
+
+    if ($parent->prop('type') eq 'ethernet') {
+        my $hwaddr = $devices{$device};
+        # search for network name
+        for my $i (@interfaces) {
+            if (defined($i->{'hwaddr'}) && $i->{'hwaddr'} eq $hwaddr) {
+                $alias{'hwaddr'} = $i->{'interface'};
+                last;
+            }
+        }
+    } elsif ($parent->prop('type') =~ m/bridge|bond/) {
+        $alias{'device'} = $device;
+    } elsif ($parent->prop('type') eq 'vlan') {
+        my ($eth, $vid) = split(/\./, $device);
+        $alias{'hwaddr'} = $devices{$eth};
+        $alias{'vid'} = $vid;
+    } else {
+        next;
+    }
     push(@aliases, \%alias);
 
+    # Retrieve source NAT, if present
     if ($a->prop('FwObjectNat')) {
         my ($type, $key) = split(/;/, $a->prop('FwObjectNat'));
         my $addr = $fw->getAddress($a->prop('FwObjectNat'));
