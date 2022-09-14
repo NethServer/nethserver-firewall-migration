@@ -76,11 +76,29 @@ my @aliases;
 my @vlans;
 my @snats;
 my @bridges;
+my @bonds;
 
 for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
     my $addr_file = '/sys/class/net/'.$i->key.'/address';
     if (-e $addr_file) {
         $devices{$i->key} = slurp($addr_file);
+    }
+}
+
+# Read hardware address of slaves from bonding
+for my $i ($ndb->get_all_by_prop('type' => 'bond')) {
+    my $bfile = '/proc/net/bonding/'.$i->key;
+    if (-e $bfile) {
+        my $slave = '';
+        open my $fh, '<', $bfile or die;
+        while( my $line = <$fh>)  {
+            if ($line =~ /^Slave Interface: (.*)$/) {
+                $slave = $1;
+            } elsif ($line =~ /^Permanent HW addr: (.*)$/) {
+                $devices{$slave} = $1
+            }
+        }
+        close $fh;
     }
 }
 
@@ -206,6 +224,25 @@ for my $b ($ndb->get_all_by_prop('type' => 'bridge')) {
     push(@bridges, \%bridge);
 }
 
+my @bond_map = ('balance-rr', 'active-backup', 'balance-xor', 'broadcast', '802.3ad', 'balance-tlb', 'balance-alb');
+for my $b ($ndb->get_all_by_prop('type' => 'bond')) {
+    my @slaves;
+    for my $i ($ndb->get_all_by_prop('role' => 'slave')) {
+         push(@slaves, $devices{$i->key});
+    }
+    my %bond = (
+        'slaves' => \@slaves,
+        'zone' => role2zone($b->prop('role')),
+        'bonding_policy' => $bond_map[$b->prop('BondOptMode')],
+        'ipaddr' => $b->prop('ipaddr') || '',
+        'netmask' => $b->prop('netmask') || '',
+        'proto' => $b->prop('bootproto') eq 'dhcp' ? 'dhcp' : 'static',
+        'gateway' => $b->prop('gateway') ? $b->prop('gateway') : '',
+        'name' => $b->key
+    );
+    push(@bonds, \%bond);
+}
+
 for my $i (@interfaces) {
     if (exists($zones{$i->{'zone'}})) {
         my $network = $zones{$i->{'zone'}}->{'network'};
@@ -244,5 +281,6 @@ print(encode_json({
             'aliases' => \@aliases,
             'vlans' => \@vlans,
             'snats' => \@snats,
-            'bridges' => \@bridges
+            'bridges' => \@bridges,
+            'bonds' => \@bonds
         }));
