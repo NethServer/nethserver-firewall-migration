@@ -105,7 +105,7 @@ for my $i ($ndb->get_all_by_prop('type' => 'bond')) {
 # Export ethernet, bridge and pppoe interfaces
 for my $i ($ndb->interfaces()) {
     my %interface;
-    if ($i->prop('type') =~ m/ethernet|bridge/ && $i->prop('role') =~ m/green|red|orange|blue/) {
+    if ($i->prop('type') =~ m/ethernet|bridge|vlan/ && $i->prop('role') =~ m/green|red|orange|blue/) {
         %interface = (
             'zone' => role2zone($i->prop('role')),
             'interface' => $i->prop('nslabel') ? $i->prop('nslabel') : role2interface($i->prop('role')),
@@ -118,6 +118,10 @@ for my $i ($ndb->interfaces()) {
             $interface{'hwaddr'} = $devices{$i->key} || '';
         } elsif ($i->prop('type') eq 'bridge') {
             $interface{'device'} = $i->key;
+        } elsif ($i->prop('type') eq 'vlan') {
+            my ($device, $vid) = split(/\./, $i->key);
+            $interface{'vid'} = $vid;
+            $interface{'hwaddr'} = $devices{$device};
         }
     } elsif ($i->prop('type') eq 'xdsl' && $i->prop('role') eq 'red') {
         my @pppoe = $ndb->get_all_by_prop('role' => 'pppoe');
