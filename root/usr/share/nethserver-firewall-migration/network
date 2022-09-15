@@ -102,6 +102,7 @@ for my $i ($ndb->get_all_by_prop('type' => 'bond')) {
     }
 }
 
+# Export ethernet, bridge and pppoe interfaces
 for my $i ($ndb->interfaces()) {
     my %interface;
     if ($i->prop('type') =~ m/ethernet|bridge/ && $i->prop('role') =~ m/green|red|orange|blue/) {
@@ -144,6 +145,7 @@ for my $i ($ndb->interfaces()) {
     }
 }
 
+# Export aliases
 for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
     my $device = $a->key;
     $device =~ s/:.*$//;
@@ -193,6 +195,7 @@ for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
     }
 }
 
+# Export vlan devices
 for my $v ($ndb->get_all_by_prop('type' => 'vlan')) {
     my ($device, $vid) = split(/\./, $v->key);
     my $hwaddr = $devices{$device};
@@ -204,6 +207,7 @@ for my $v ($ndb->get_all_by_prop('type' => 'vlan')) {
     push(@vlans, \%vlan);
 }
 
+# Export bridge devices
 for my $b ($ndb->get_all_by_prop('type' => 'bridge')) {
     my @ports;
     for my $i ($ndb->get_all_by_prop('role' => 'bridged')) {
@@ -224,6 +228,7 @@ for my $b ($ndb->get_all_by_prop('type' => 'bridge')) {
     push(@bridges, \%bridge);
 }
 
+# Export bond interfaces
 my @bond_map = ('balance-rr', 'active-backup', 'balance-xor', 'broadcast', '802.3ad', 'balance-tlb', 'balance-alb');
 for my $b ($ndb->get_all_by_prop('type' => 'bond')) {
     my @slaves;
@@ -232,6 +237,7 @@ for my $b ($ndb->get_all_by_prop('type' => 'bond')) {
     }
     my %bond = (
         'slaves' => \@slaves,
+        'interface' => $b->key,
         'zone' => role2zone($b->prop('role')),
         'bonding_policy' => $bond_map[$b->prop('BondOptMode')],
         'ipaddr' => $b->prop('ipaddr') || '',
@@ -243,7 +249,8 @@ for my $b ($ndb->get_all_by_prop('type' => 'bond')) {
     push(@bonds, \%bond);
 }
 
-for my $i (@interfaces) {
+# Extract firewall zones from interfaces
+for my $i ((@interfaces,@bonds)) {
     if (exists($zones{$i->{'zone'}})) {
         my $network = $zones{$i->{'zone'}}->{'network'};
         push(@$network, $i->{'interface'});
