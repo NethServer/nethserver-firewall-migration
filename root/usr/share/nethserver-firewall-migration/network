@@ -121,7 +121,12 @@ for my $i ($ndb->interfaces()) {
         } elsif ($i->prop('type') eq 'vlan') {
             my ($device, $vid) = split(/\./, $i->key);
             $interface{'vid'} = $vid;
-            $interface{'hwaddr'} = $devices{$device};
+            if ($devices{$device}) {
+                $interface{'hwaddr'} = $devices{$device};
+            } else {
+                # required for vlans over logical interfaces
+                $interface{'device'} = $device;
+            }
         }
     } elsif ($i->prop('type') eq 'xdsl' && $i->prop('role') eq 'red') {
         my @pppoe = $ndb->get_all_by_prop('role' => 'pppoe');
