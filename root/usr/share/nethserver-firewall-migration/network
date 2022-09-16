@@ -198,9 +198,14 @@ for my $v ($ndb->get_all_by_prop('type' => 'vlan')) {
     my $hwaddr = $devices{$device};
     my %vlan = (
         'type' => '8021q',
-        'hwaddr' => $devices{$device},
         'vid' => $vid
     );
+    if ($hwaddr) {
+        $vlan{'hwaddr'} = $hwaddr;
+    } else {
+        # vlan over logical interface
+        $vlan{'device'} = $device;
+    }
     push(@vlans, \%vlan);
 }
 
