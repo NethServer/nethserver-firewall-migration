@@ -164,14 +164,7 @@ for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
     );
 
     if ($parent->prop('type') eq 'ethernet') {
-        my $hwaddr = $devices{$device};
-        # search for network name
-        for my $i (@interfaces) {
-            if (defined($i->{'hwaddr'}) && $i->{'hwaddr'} eq $hwaddr) {
-                $alias{'hwaddr'} = $i->{'interface'};
-                last;
-            }
-        }
+        $alias{'hwaddr'} = $devices{$device};
     } elsif ($parent->prop('type') =~ m/bridge|bond/) {
         $alias{'device'} = $device;
     } elsif ($parent->prop('type') eq 'vlan') {
