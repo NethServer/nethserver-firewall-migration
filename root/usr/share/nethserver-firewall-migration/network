@@ -225,9 +225,15 @@ for my $b ($ndb->get_all_by_prop('type' => 'bridge')) {
             } elsif ($type eq 'vlan') {
                 my ($eth, $vid) = split(/\./, $i->key);
                 push(@ports, {'type'=> $type, 'hwaddr' => $devices{$eth}, 'vid' => $vid});
+            } else {
+                push(@ports, {'type'=> $type, 'device' => $i->key});
             }
         }
     }
+
+    # skip bridges without ports
+    next if (!@ports);
+
     my %bridge = (
         'ports' => \@ports,
         'name' => $b->key
@@ -240,24 +246,30 @@ my @bond_map = ('balance-rr', 'active-backup', 'balance-xor', 'broadcast', '802.
 for my $b ($ndb->get_all_by_prop('type' => 'bond')) {
     my @slaves;
     for my $i ($ndb->get_all_by_prop('role' => 'slave')) {
-         push(@slaves, $devices{$i->key});
+         if ($i->prop('master') eq $b->key) {
+             push(@slaves, $devices{$i->key});
+         }
     }
     my %bond = (
         'slaves' => \@slaves,
         'interface' => $b->key,
-        'zone' => role2zone($b->prop('role')),
-        'bonding_policy' => $bond_map[$b->prop('BondOptMode')],
+        'bonding_policy' => $bond_map[($b->prop('BondOptMode') || 0)],
         'ipaddr' => $b->prop('ipaddr') || '',
         'netmask' => $b->prop('netmask') || '',
-        'proto' => $b->prop('bootproto') eq 'dhcp' ? 'dhcp' : 'static',
+        'proto' => ($b->prop('bootproto') || '') eq 'dhcp' ? 'dhcp' : 'static',
         'gateway' => $b->prop('gateway') ? $b->prop('gateway') : '',
-        'name' => $b->key
+        'name' => $b->key,
+        'zone' => ''
     );
+    if ($b->prop('role') =~ m/green|red|orange|blue/) {
+        $bond{'zone'} = role2zone($b->prop('role'));
+    }
     push(@bonds, \%bond);
 }
 
 # Extract firewall zones from interfaces
 for my $i ((@interfaces,@bonds)) {
+    next if (!$i->{'zone'});
     if (exists($zones{$i->{'zone'}})) {
         my $network = $zones{$i->{'zone'}}->{'network'};
         push(@$network, $i->{'interface'});
