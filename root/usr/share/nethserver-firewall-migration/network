@@ -65,7 +65,6 @@ sub role2interface {
     return $role.$counter{$role};
 }
 
-
 my $ndb = esmith::NetworksDB->open_ro();
 my $fw = new NethServer::Firewall();
 
@@ -76,6 +75,8 @@ my @forwardings;
 my @aliases;
 my @vlans;
 my @snats;
+my @bridges;
+my @bonds;
 
 for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
     my $addr_file = '/sys/class/net/'.$i->key.'/address';
@@ -84,18 +85,49 @@ for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
     }
 }
 
+# Read hardware address of slaves from bonding
+for my $i ($ndb->get_all_by_prop('type' => 'bond')) {
+    my $bfile = '/proc/net/bonding/'.$i->key;
+    if (-e $bfile) {
+        my $slave = '';
+        open my $fh, '<', $bfile or die;
+        while( my $line = <$fh>)  {
+            if ($line =~ /^Slave Interface: (.*)$/) {
+                $slave = $1;
+            } elsif ($line =~ /^Permanent HW addr: (.*)$/) {
+                $devices{$slave} = $1
+            }
+        }
+        close $fh;
+    }
+}
+
+# Export ethernet, bridge and pppoe interfaces
 for my $i ($ndb->interfaces()) {
     my %interface;
-    if ($i->prop('type') eq 'ethernet' && $i->prop('role') =~ m/green|red|orange|blue/) {
+    if ($i->prop('type') =~ m/ethernet|bridge|vlan/ && $i->prop('role') =~ m/green|red|orange|blue/) {
         %interface = (
             'zone' => role2zone($i->prop('role')),
             'interface' => $i->prop('nslabel') ? $i->prop('nslabel') : role2interface($i->prop('role')),
-            'hwaddr' => $devices{$i->key} || '',
             'ipaddr' => $i->prop('ipaddr') || '',
             'netmask' => $i->prop('netmask') || '',
             'proto' => $i->prop('bootproto') eq 'dhcp' ? 'dhcp' : 'static',
             'gateway' => $i->prop('gateway') ? $i->prop('gateway') : ''
         );
+        if ($i->prop('type') eq 'ethernet') {
+            $interface{'hwaddr'} = $devices{$i->key} || '';
+        } elsif ($i->prop('type') eq 'bridge') {
+            $interface{'device'} = $i->key;
+        } elsif ($i->prop('type') eq 'vlan') {
+            my ($device, $vid) = split(/\./, $i->key);
+            $interface{'vid'} = $vid;
+            if ($devices{$device}) {
+                $interface{'hwaddr'} = $devices{$device};
+            } else {
+                # required for vlans over logical interfaces
+                $interface{'device'} = $device;
+            }
+        }
     } elsif ($i->prop('type') eq 'xdsl' && $i->prop('role') eq 'red') {
         my @pppoe = $ndb->get_all_by_prop('role' => 'pppoe');
         next if not @pppoe;
@@ -122,28 +154,34 @@ for my $i ($ndb->interfaces()) {
     }
 }
 
+# Export aliases
 for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
     my $device = $a->key;
     $device =~ s/:.*$//;
-    my $hwaddr = $devices{$device};
+    my $parent = $ndb->get($device);
+    next if !$parent;
     my $interface = '';
-    # search for network name
-    for my $i (@interfaces) {
-        if ($i->{'hwaddr'} eq $hwaddr) {
-            $interface = $i->{'interface'};
-            last;
-        }
-    }
-    next if ($interface eq '');
     my %alias = (
         'proto' => 'static',
-        'device' => $interface,
         'ipaddr' => $a->prop('ipaddr'),
         'netmask' => $a->prop('netmask'),
         'gateway' => $a->prop('gateway') ? $a->prop('gateway') : ''
     );
+
+    if ($parent->prop('type') eq 'ethernet') {
+        $alias{'hwaddr'} = $devices{$device};
+    } elsif ($parent->prop('type') =~ m/bridge|bond/) {
+        $alias{'device'} = $device;
+    } elsif ($parent->prop('type') eq 'vlan') {
+        my ($eth, $vid) = split(/\./, $device);
+        $alias{'hwaddr'} = $devices{$eth};
+        $alias{'vid'} = $vid;
+    } else {
+        next;
+    }
     push(@aliases, \%alias);
 
+    # Retrieve source NAT, if present
     if ($a->prop('FwObjectNat')) {
         my ($type, $key) = split(/;/, $a->prop('FwObjectNat'));
         my $addr = $fw->getAddress($a->prop('FwObjectNat'));
@@ -159,19 +197,79 @@ for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
     }
 }
 
+# Export vlan devices
 for my $v ($ndb->get_all_by_prop('type' => 'vlan')) {
     my ($device, $vid) = split(/\./, $v->key);
     my $hwaddr = $devices{$device};
     my %vlan = (
         'type' => '8021q',
-        'hwaddr' => $devices{$device},
         'vid' => $vid
     );
+    if ($hwaddr) {
+        $vlan{'hwaddr'} = $hwaddr;
+    } else {
+        # vlan over logical interface
+        $vlan{'device'} = $device;
+    }
     push(@vlans, \%vlan);
 }
 
+# Export bridge devices
+for my $b ($ndb->get_all_by_prop('type' => 'bridge')) {
+    my @ports;
+    for my $i ($ndb->get_all_by_prop('role' => 'bridged')) {
+        if ($i->prop('bridge') eq $b->key) {
+            my $type = $i->prop('type');
+            if ($type eq 'ethernet') {
+                push(@ports, {'type'=> $type, 'hwaddr' => $devices{$i->key}});
+            } elsif ($type eq 'vlan') {
+                my ($eth, $vid) = split(/\./, $i->key);
+                push(@ports, {'type'=> $type, 'hwaddr' => $devices{$eth}, 'vid' => $vid});
+            } else {
+                push(@ports, {'type'=> $type, 'device' => $i->key});
+            }
+        }
+    }
 
-for my $i (@interfaces) {
+    # skip bridges without ports
+    next if (!@ports);
+
+    my %bridge = (
+        'ports' => \@ports,
+        'name' => $b->key
+    );
+    push(@bridges, \%bridge);
+}
+
+# Export bond interfaces
+my @bond_map = ('balance-rr', 'active-backup', 'balance-xor', 'broadcast', '802.3ad', 'balance-tlb', 'balance-alb');
+for my $b ($ndb->get_all_by_prop('type' => 'bond')) {
+    my @slaves;
+    for my $i ($ndb->get_all_by_prop('role' => 'slave')) {
+         if ($i->prop('master') eq $b->key) {
+             push(@slaves, $devices{$i->key});
+         }
+    }
+    my %bond = (
+        'slaves' => \@slaves,
+        'interface' => $b->key,
+        'bonding_policy' => $bond_map[($b->prop('BondOptMode') || 0)],
+        'ipaddr' => $b->prop('ipaddr') || '',
+        'netmask' => $b->prop('netmask') || '',
+        'proto' => ($b->prop('bootproto') || '') eq 'dhcp' ? 'dhcp' : 'static',
+        'gateway' => $b->prop('gateway') ? $b->prop('gateway') : '',
+        'name' => $b->key,
+        'zone' => ''
+    );
+    if ($b->prop('role') =~ m/green|red|orange|blue/) {
+        $bond{'zone'} = role2zone($b->prop('role'));
+    }
+    push(@bonds, \%bond);
+}
+
+# Extract firewall zones from interfaces
+for my $i ((@interfaces,@bonds)) {
+    next if (!$i->{'zone'});
     if (exists($zones{$i->{'zone'}})) {
         my $network = $zones{$i->{'zone'}}->{'network'};
         push(@$network, $i->{'interface'});
@@ -208,12 +306,7 @@ print(encode_json({
             'forwardings' => \@forwardings,
             'aliases' => \@aliases,
             'vlans' => \@vlans,
-            'snats' => \@snats
+            'snats' => \@snats,
+            'bridges' => \@bridges,
+            'bonds' => \@bonds
         }));
-
-# TODO:
-# - bridge
-# - bond
-# - hotspot
-# - wan providers
-# - pppoe
