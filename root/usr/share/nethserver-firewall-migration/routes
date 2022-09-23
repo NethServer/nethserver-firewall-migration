@@ -56,14 +56,15 @@ for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
 
 for my $r ($rdb->get_all_by_prop('type' => 'static')) {
     my $interface = $r->prop('Device');;
+    my $type = $ndb->get_prop($interface, 'type');
     my %route = (
         'target' => $r->key,
         'gateway' =>  $r->prop('Router'),
         'metric' =>  $r->prop('Metric') || 0,
-        'description' => $r->prop('Description') || ''
+        'description' => $r->prop('Description') || '',
+        'type' => $type
     );
 
-    my $type = $ndb->get_prop($interface, 'type');
     if ($type eq 'ethernet') {
         my $hwaddr = $devices{$interface};
         next if (!$hwaddr);
