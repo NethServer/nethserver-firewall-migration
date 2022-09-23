@@ -65,12 +65,29 @@ $general{'reliability'} = scalar(@track_ip);
 $general{'interval'} = $cdb->get_prop('firewall', 'PingInterval') || '5';
 
 for my $provider ($ndb->get_all_by_prop('type' => 'provider')) {
-    my $device = $devices{$provider->prop('interface')} || next;
-    push(@providers, {
+    my $interface = $provider->prop('interface');
+    my $type = $ndb->get_prop($interface, 'type');
+
+    my %p = (
         'name' => $provider->key,
         'weight' => $provider->prop('weight') || '1',
-        'device' => $device
-    })
+        'type' => $type
+    );
+    if ($type eq 'ethernet') {
+        my $hwaddr = $devices{$interface};
+        next if (!$hwaddr);
+        $p{'hwaddr'} = $hwaddr;
+    } elsif ($type eq 'vlan') {
+        my ($device, $vid) = split(/\./,$interface);
+        my $hwaddr = $devices{$device};
+        next if (!$hwaddr);
+        $p{'vid'} = $vid;
+        $p{'hwaddr'} = $hwaddr;
+    } else {
+        $p{'device'} = $interface;
+    }
+
+    push(@providers, \%p);
 }
 
 for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
