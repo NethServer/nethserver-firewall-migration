@@ -24,6 +24,7 @@ use strict;
 use warnings;
 use JSON;
 use esmith::ConfigDB;
+use esmith::NetworksDB;
 
 sub slurp {
     my $file = shift;
@@ -40,23 +41,44 @@ sub slurp {
 }
 
 my $rdb = esmith::ConfigDB->open_ro('routes');
+my $ndb = esmith::NetworksDB->open_ro();
 
 my @routes;
+my %devices;
+
+for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
+    my $addr_file = '/sys/class/net/'.$i->key.'/address';
+    if (-e $addr_file) {
+        $devices{$i->key} = slurp($addr_file);
+    }
+}
+
 
 for my $r ($rdb->get_all_by_prop('type' => 'static')) {
-    my $interface;
-    my $addr_file = '/sys/class/net/'.$r->prop('Device').'/address';
-    if (-e $addr_file) {
-        $interface = slurp($addr_file);
-    }
-    next if (!$interface);
-    push(@routes, {
-        'interface' => $interface,
+    my $interface = $r->prop('Device');;
+    my %route = (
         'target' => $r->key,
         'gateway' =>  $r->prop('Router'),
         'metric' =>  $r->prop('Metric') || 0,
         'description' => $r->prop('Description') || ''
-    });
+    );
+
+    my $type = $ndb->get_prop($interface, 'type');
+    if ($type eq 'ethernet') {
+        my $hwaddr = $devices{$interface};
+        next if (!$hwaddr);
+        $route{'hwaddr'} = $hwaddr;
+    } elsif ($type eq 'vlan') {
+        my ($device, $vid) = split(/\./,$interface);
+        my $hwaddr = $devices{$device};
+        next if (!$hwaddr);
+        $route{'vid'} = $vid;
+        $route{'hwaddr'} = $hwaddr;
+    } else {
+        $route{'device'} = $interface;
+    }
+
+    push(@routes, \%route);
 }
 
 print(encode_json({'routes' => \@routes}));
