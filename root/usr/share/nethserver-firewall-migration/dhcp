@@ -49,6 +49,14 @@ my $hdb = esmith::HostsDB->open_ro();
 my @servers;
 my %general;
 my @reservations;
+my %devices;
+
+for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
+    my $addr_file = '/sys/class/net/'.$i->key.'/address';
+    if (-e $addr_file) {
+        $devices{$i->key} = slurp($addr_file);
+    }
+}
 
 my $tot_limit = 0;
 foreach ($ddb->get_all_by_prop('type' => 'range')) {
@@ -58,10 +66,8 @@ foreach ($ddb->get_all_by_prop('type' => 'range')) {
     my $start = $_->prop('DhcpRangeStart') || next;
     my $end = $_->prop('DhcpRangeEnd') || next;
 
+    my $type = $ndb->get_prop($interface, 'type');
     my $status = $_->prop('status') || 'disabled';
-
-    my $addr_file = '/sys/class/net/'.$interface.'/address';
-    my $hwaddr = slurp($addr_file);
 
     my $start_ip = new NetAddr::IP($start);
     my $end_ip = new NetAddr::IP($end);
@@ -103,13 +109,29 @@ foreach ($ddb->get_all_by_prop('type' => 'range')) {
 
     my %server = (
         "ignore" => ($status eq 'disabled') ? 1 : 0,
-        "hwaddr" => $hwaddr,
         "start" => $start,
         "limit" => $limit,
         "leasetime" => $ltime."m",
         "domain" => $_->prop('DhcpDomain') || '',
         "dhcp_option" => \@options,
+        "type" => $type
     );
+
+    if ($type eq 'ethernet') {
+        my $hwaddr = $devices{$interface};
+        next if (!$hwaddr);
+        $server{'hwaddr'} = $hwaddr;
+    } elsif ($type eq 'vlan') {
+        my ($device, $vid) = split(/\./,$interface);
+        my $hwaddr = $devices{$device};
+        next if (!$hwaddr);
+        $server{'vid'} = $vid;
+        $server{'hwaddr'} = $hwaddr;
+    } else {
+        $server{'device'} = $interface;
+    }
+
+
     push(@servers, \%server);
 
 }
