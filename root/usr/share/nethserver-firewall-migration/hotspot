@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+use esmith::NetworksDB;
+use NethServer::Password;
+
+sub slurp {
+    my $file = shift;
+    my $data;
+    open my $fh, '<', $file or die;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    # trim
+    $data =~ s/^\s+|\s+$//g;
+
+    return $data;
+}
+
+my $cdb = esmith::ConfigDB->open_ro();
+my $ndb = esmith::NetworksDB->open_ro();
+
+my %config;
+
+my $host = $cdb->get_prop('dedalo', 'IcaroHost') || 'my.nethspot.com';
+my $base_url = "https://$host";
+$config{'disabled'} = ($cdb->get_prop('dedalo', 'status') || '') eq 'enabled' ? '0' : '1';
+$config{'aaa_url'} = $cdb->get_prop('dedalo', 'AaaUrl') || "$base_url/wax/aaa";
+$config{'api_url'} = $cdb->get_prop('dedalo', 'ApiUrl') || "$base_url/api";
+$config{'unit_description'} = $cdb->get_prop('dedalo', 'Description') || '';
+$config{'hotspot_id'} = $cdb->get_prop('dedalo', 'Id') || '';
+$config{'network'} = $cdb->get_prop('dedalo', 'Network') || '';
+$config{'splash_page'} = $cdb->get_prop('dedalo', 'SplashPageUrl') || "$base_url/wings";
+$config{'unit_name'} = $cdb->get_prop('dedalo', 'UnitName') || '';
+$config{'unit_uuid'} = $cdb->get_prop('dedalo', 'Uuid') || '';
+$config{'dhcp_end'} = $cdb->get_prop('dedalo', 'DhcpEnd') || '';
+$config{'dhcp_start'} = $cdb->get_prop('dedalo', 'DhcpStart') || '';
+$config{'max_clients'} = $cdb->get_prop('dedalo', 'Maxclients') || '';
+$config{'secret'} =  NethServer::Password::store('dedalo');
+
+my @interfaces = $ndb->get_all_by_prop('role', 'hotspot');
+if (@interfaces) {
+    my $interface = $interfaces[0]->key;
+    $config{'type'} = $interfaces[0]->prop('type');
+    if ($config{'type'} eq 'ethernet') {
+        my $hwaddr = slurp('/sys/class/net/'.$interface.'/address');
+        next if (!$hwaddr);
+        $config{'hwaddr'} = $hwaddr;
+    } elsif ($config{'type'} eq 'vlan') {
+        my ($device, $vid) = split(/\./,$interface);
+        my $hwaddr = slurp('/sys/class/net/'.$device.'/address');
+        next if (!$hwaddr);
+        $config{'vid'} = $vid;
+        $config{'hwaddr'} = $hwaddr;
+    } else {
+        $config{'device'} = $interface;
+    }
+
+} else {
+    $config{'interface'} = '';
+}
+
+print(encode_json({'config' => \%config}));
