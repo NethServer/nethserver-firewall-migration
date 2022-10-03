@@ -110,7 +110,7 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
 
     my $left = substr($t->prop('left'), 1);
     my $local_ip = '%any';
-    if ($ndb->get_prop($left, 'bootproto')  eq 'none') {
+    if (($ndb->get_prop($left, 'bootproto') || '')  eq 'none') {
         $local_ip = $ndb->get_prop($left, 'ipaddr') || '%any'
     }
     my %remote = (
