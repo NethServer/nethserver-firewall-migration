@@ -1,0 +1,100 @@
+#!/usr/bin/perl
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethrw@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+use NethServer::Firewall;
+
+sub slurp {
+    my $file = shift;
+    if (! -f $file) {
+        return '';
+    }
+    my $data;
+    open my $fh, '<', $file or die $!;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    return $data;
+}
+
+sub parse_config {
+    my $file = shift;
+    open my $fh, '<', $file;
+
+    my %config;
+    my @push_options;
+    while(my $line = <$fh>) {
+        next if ($line =~ m/^$/ or $line =~ m/\s*^#/);
+        my @tmp = split(/\s+/, $line);
+        my $nparts = scalar @tmp;
+        my $option = shift(@tmp);
+        # exclude options which will be remapped
+        next if $option =~ m/status|cd|up|down|syslog|script\-security|crl\-verify|log\-append|client\-connect|client\-disconnect|management|compression/;
+
+        if ($nparts == 1) {
+            $config{$option} = '1';
+        } elsif ($nparts) {
+            if ($option =~ m/dh|key|cert|ca|secret/) {
+                $config{$option} = slurp($tmp[0]);
+            } elsif ($option eq 'push') {
+                my $v = join(" ",@tmp);
+                $v =~ s/"//g; # remove extra quotes
+                push(@push_options, $v);
+            } else {
+                $config{$option} = join(" ",@tmp);
+            }
+        }
+
+    }
+    close $fh;
+
+    $config{'push'} = \@push_options;
+
+    return \%config;
+}
+
+my $vdb = esmith::ConfigDB->open_ro('vpn');
+my $cdb = esmith::ConfigDB->open_ro();
+my $fw = new NethServer::Firewall();
+
+my @servers;
+my @clients;
+
+for ($vdb->get_all_by_prop('type', 'openvpn-tunnel-server')) {
+    my $config = parse_config('/etc/openvpn/'.$_->key.'.conf');
+    $config->{'name'} = $_->key;
+    $config->{'enabled'} = $_->prop('status') eq 'enabled' ? '1' : '0';
+    push(@servers, $config);
+}
+
+for ($vdb->get_all_by_prop('type', 'tunnel')) {
+    my $config = parse_config('/etc/openvpn/'.$_->key.'.conf');
+    $config->{'name'} = $_->key;
+    $config->{'enabled'} = $_->prop('status') eq 'enabled' ? '1' : '0';
+    push(@clients, $config);
+}
+
+print(encode_json({'servers' => \@servers, 'clients' => \@clients}));
