@@ -105,6 +105,8 @@ for my $i ($ndb->get_all_by_prop('type' => 'bond')) {
 # Export ethernet, bridge and pppoe interfaces
 for my $i ($ndb->interfaces()) {
     my %interface;
+    my $bandwidth_up = $i->prop('FwOutBandwidth') || '';
+    my $bandwidth_down = $i->prop('FwInBandwidth') || '';
     if ($i->prop('type') =~ m/ethernet|bridge|vlan/ && $i->prop('role') =~ m/green|red|orange|blue/) {
         %interface = (
             'zone' => role2zone($i->prop('role')),
@@ -128,6 +130,10 @@ for my $i ($ndb->interfaces()) {
                 $interface{'device'} = $device;
             }
         }
+        if ($i->prop('role') eq 'red') {
+            $interface{"bandwidth_up"} = $bandwidth_up ? $bandwidth_up."kbit" : '';
+            $interface{"bandwidth_down"} = $bandwidth_down ? $bandwidth_down."kbit" : '';
+        }
     } elsif ($i->prop('type') eq 'xdsl' && $i->prop('role') eq 'red') {
         my @pppoe = $ndb->get_all_by_prop('role' => 'pppoe');
         next if not @pppoe;
@@ -136,6 +142,8 @@ for my $i ($ndb->interfaces()) {
             'interface' => $i->prop('provider') ? $i->prop('provider') : role2interface('red'),
             'username' => $i->prop('user') || '',
             'password' => $i->prop('Password') || '',
+            'bandwidth_up' => $bandwidth_up ? $bandwidth_up."kbit" : '',
+            'bandwidth_down' => $bandwidth_down ? $bandwidth_down."kbit" : '',
             'proto' => 'pppoe',
             'ipv6' => '0',
             'keepalive' => '100 5'
