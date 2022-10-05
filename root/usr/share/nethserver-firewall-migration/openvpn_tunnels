@@ -52,9 +52,10 @@ sub parse_config {
         my $nparts = scalar @tmp;
         my $option = shift(@tmp);
         # exclude options which will be remapped
-        next if $option =~ m/status|cd|up|down|syslog|script\-security|crl\-verify|log\-append|client\-connect|client\-disconnect|management|compression/;
+        next if $option =~ m/status|cd|up|down|syslog|script\-security|crl\-verify|log\-append|client\-connect|client\-disconnect|management|compression|client\-config\-dir/;
 
         if ($nparts == 1) {
+            $option =~ s/-/_/g;
             $config{$option} = '1';
         } elsif ($nparts) {
             if ($option =~ m/dh|key|cert|ca|secret/) {
@@ -64,6 +65,7 @@ sub parse_config {
                 $v =~ s/"//g; # remove extra quotes
                 push(@push_options, $v);
             } else {
+                $option =~ s/-/_/g;
                 $config{$option} = join(" ",@tmp);
             }
         }
