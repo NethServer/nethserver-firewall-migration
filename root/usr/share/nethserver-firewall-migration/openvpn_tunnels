@@ -46,6 +46,7 @@ sub parse_config {
 
     my %config;
     my @push_options;
+    my @route_options;
     while(my $line = <$fh>) {
         next if ($line =~ m/^$/ or $line =~ m/\s*^#/);
         my @tmp = split(/\s+/, $line);
@@ -64,6 +65,8 @@ sub parse_config {
                 my $v = join(" ",@tmp);
                 $v =~ s/"//g; # remove extra quotes
                 push(@push_options, $v);
+            } elsif ($option eq 'route') {
+                push(@route_options, join(" ",@tmp));
             } else {
                 $option =~ s/-/_/g;
                 $config{$option} = join(" ",@tmp);
@@ -74,6 +77,7 @@ sub parse_config {
     close $fh;
 
     $config{'push'} = \@push_options;
+    $config{'route'} = \@route_options;
 
     return \%config;
 }
