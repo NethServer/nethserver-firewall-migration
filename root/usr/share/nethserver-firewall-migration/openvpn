@@ -80,9 +80,10 @@ while( my $line = <$fh>) {
     my $nparts = scalar @tmp;
     my $option = shift(@tmp);
     # exclude options which will be remapped
-    next if $option =~ m/status|cd|up|down|syslog|script\-security|dh|key|crl\-verify|log\-append|cert|ca|client\-connect|client\-disconnect|management|compression/;
+    next if $option =~ m/status|cd|up|down|syslog|script\-security|dh|key|crl\-verify|log\-append|cert|ca|client\-connect|client\-disconnect|management|compression|auth\-user\-pass\-verify|client\-config\-dir|ifconfig\-pool\-persist/;
 
     if ($nparts == 1) {
+        $option =~ s/-/_/g;
         $rw_options{$option} = '1';
     } elsif ($nparts) {
         if ($option eq 'push') {
@@ -90,6 +91,7 @@ while( my $line = <$fh>) {
             $v =~ s/"//g; # remove extra quotes
             push(@push_options, $v);
         } else {
+            $option =~ s/-/_/g;
             $rw_options{$option} = join(" ",@tmp);
         }
     }
