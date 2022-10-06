@@ -47,11 +47,21 @@ sub parse_config {
     my %config;
     my @push_options;
     my @route_options;
+    my $connection_tag = 0;
     while(my $line = <$fh>) {
         next if ($line =~ m/^$/ or $line =~ m/\s*^#/);
         my @tmp = split(/\s+/, $line);
         my $nparts = scalar @tmp;
         my $option = shift(@tmp);
+
+        # skip wan priorities on clients
+        $connection_tag = 1 if ($option eq '<connection>');
+        if ($option eq '</connection>') {
+             $connection_tag = 0;
+             next;
+        }
+        next if $connection_tag;
+
         # exclude options which will be remapped
         next if $option =~ m/status|cd|up|down|syslog|script\-security|crl\-verify|log\-append|client\-connect|client\-disconnect|management|compression|client\-config\-dir/;
 
