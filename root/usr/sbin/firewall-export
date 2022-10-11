@@ -37,6 +37,7 @@ done
 
 pushd $tmp_dir >/dev/null
 tar czf "$OUT_DIR/export.tar.gz" "export"
+chmod 600 "$OUT_DIR/export.tar.gz"
 popd >/dev/null
 
 rm -rf $tmp_dir
