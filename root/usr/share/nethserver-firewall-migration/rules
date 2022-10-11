@@ -44,15 +44,21 @@ sub slurp {
 sub rename_zone {
     my $zone = shift;
     if ($zone eq 'loc') {
-        return 'lan';
+        return ['lan'];
     } elsif ($zone eq 'net') {
-        return 'wan';
+        return ['wan'];
     } elsif ($zone eq '$FW') {
-        return '';
+        return [''];
     } elsif ($zone eq 'ovpn') {
-        return 'openvpnrw';
+        return ['openvpnrw', 'openvpntun'];
+    } elsif ($zone eq 'ivpn') {
+        return ['ipsectun'];
+    } elsif ($zone eq 'ovpn,ivpn') {
+        return ['openvpnrw', 'openvpntun', 'ipsectun'];
+    } elsif ($zone eq 'hotsp') {
+        return ['dedalo'];
     }
-    return $zone;
+    return [$zone];
 }
 
 
@@ -62,10 +68,8 @@ my $fw = new NethServer::Firewall();
 
 my @rules;
 
-#
-#                                Time=
-                                    
 for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
+    my @tmp_rules;
     my $action = $rule->prop('Action');
     my $service = $rule->prop('Service') || 'any';
     # skip multiwan and QoS rules
@@ -121,7 +125,7 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
                 'proto' => $k,
                 'dest_port' => $ports
             );
-            push(@rules, \%mrule);
+            push(@tmp_rules, \%mrule);
         }
     } else {
         my %mrule = (
@@ -131,7 +135,25 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
             'proto' => 'all',
             'dest_port' => ''
         );
-        push(@rules, \%mrule);
+        push(@tmp_rules, \%mrule);
+    }
+    # Create one rule for each source/destination combinaiton
+    foreach my $r (@tmp_rules) {
+        my $dst_arr = $r->{'dest'};
+        my $add_dst_desc = scalar(@{$dst_arr}) > 1;
+        my $src_arr = $r->{'src'};
+        my $add_src_desc = scalar(@{$src_arr}) > 1;
+        foreach my $src (@$src_arr) {
+            foreach my $dst (@$dst_arr) {
+                my $tmp = {%$r};
+                $tmp->{'src'} = $src;
+                $tmp->{'dest'} = $dst;
+                # avoid naming collisions
+                $tmp->{'name'} = $tmp->{'name'}."_$src" if ($add_src_desc);
+                $tmp->{'name'} = $tmp->{'name'}."_$dst" if ($add_dst_desc);
+                push(@rules, $tmp);
+            }
+        }
     }
 }
 
