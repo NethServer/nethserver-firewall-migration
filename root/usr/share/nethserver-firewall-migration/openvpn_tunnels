@@ -99,6 +99,11 @@ my $fw = new NethServer::Firewall();
 my @servers;
 my @clients;
 
+# Exit if VPN has not beend installed
+if (!$vdb) {
+    exit 0;
+}
+
 for ($vdb->get_all_by_prop('type', 'openvpn-tunnel-server')) {
     my $config = parse_config('/etc/openvpn/'.$_->key.'.conf');
     $config->{'name'} = $_->key;

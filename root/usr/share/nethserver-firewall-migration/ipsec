@@ -50,6 +50,11 @@ my @interfaces;
 my @routes;
 my %devices;
 
+# Exit if VPN has not beend installed
+if (!$vdb) {
+    exit 0;
+}
+
 for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
     my $addr_file = '/sys/class/net/'.$i->key.'/address';
     if (-e $addr_file) {
