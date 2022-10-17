@@ -22,7 +22,7 @@
 
 set -e
 
-OUT_DIR='/var/lib/nethserver/firewal-migration'
+OUT_DIR='/var/lib/nethserver/firewall-migration'
 
 tmp_dir=$(mktemp -d)
 
