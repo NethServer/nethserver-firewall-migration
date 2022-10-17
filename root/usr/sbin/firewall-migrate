@@ -1,0 +1,70 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+set -e
+source /opt/rh/devtoolset-7/enable
+
+device=$1
+
+bdir=/usr/share/nethserver-firewall-migration-builder
+dest_dir=$bdir/files/usr/share/migration
+image=$bdir/nextsecurity.img.gz
+
+echo -n "Exporting configuration ... "
+firewall-export
+mkdir -p $dest_dir
+cp /var/lib/nethserver/firewall-migration/export.tar.gz $dest_dir
+echo "ok"
+
+echo -n "Building the image ... "
+pushd $bdir >/dev/null
+make image FILES="files/" PACKAGES="$(grep "Package: " packages/Packages | cut -d ':' -f 2 | tr '\n' ' ')" &>/var/log/firewall-migrate.log
+mv $bdir/bin/targets/x86/64/nextsecurity-*-generic-ext4-combined-efi.img.gz $image
+make clean &> /dev/null
+popd >/dev/null
+echo "ok"
+
+zcat $image | strings | grep -q "/bin/bash"
+if [ $? -gt 0 ]; then
+    echo "Image creation failed. Please try again"
+    exit 1
+fi
+
+# Apply the image
+if [ -n "$device" ]; then
+    echo "Writing the image to disk ... see you on the other side!"
+    # Make sure image and bins are saved in RAM
+    /bin/cp $image /run
+    /bin/cp /usr/bin/dd /usr/bin/zcat /run
+    # Enable sysrq
+    echo 1 > /proc/sys/kernel/sysrq
+    # Sync filesystems
+    sync
+    echo 3 > /proc/sys/vm/drop_caches
+    # Mount all filesystems in read-only
+    echo u > /proc/sysrq-trigger
+    # Write the image
+    # Use 64K block to minimize write errors
+    /run/zcat /run/nextsecurity.img.gz 2>/dev/null | /run/dd of=$device bs=64K iflag=fullblock oflag=nocache,sync status=progress
+    # Reboot without sync
+    echo "b" > /proc/sysrq-trigger
+fi
