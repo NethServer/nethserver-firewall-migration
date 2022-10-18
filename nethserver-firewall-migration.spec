@@ -2,13 +2,14 @@
 %global __os_install_post %{nil}
 %global debug_package %{nil}
 
+%define nextsec_ver 22.03.0
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.0
+Version: 0.0.1
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
-Source1: https://nextsec-testing.fra1.digitaloceanspaces.com/targets/x86/64/nextsecurity-imagebuilder-22.03.0-x86-64.Linux-x86_64.tar.xz
+Source1: https://nextsec-testing.fra1.digitaloceanspaces.com/targets/x86/64/nextsecurity-imagebuilder-%{nextsec_ver}-x86-64.Linux-x86_64.tar.xz
 Source2: https://github.com/NethServer/nextsecurity/archive/refs/heads/master.tar.gz
 URL: %{url_prefix}/%{name}
 AutoReq: no
