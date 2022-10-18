@@ -21,39 +21,77 @@
 #
 
 set -e
-source /opt/rh/devtoolset-7/enable
 
 device=$1
 
 bdir=/usr/share/nethserver-firewall-migration-builder
-dest_dir=$bdir/files/usr/share/migration
+dest_dir=usr/share/migration
 image=$bdir/nextsecurity.img.gz
+uimage=${image%.gz}
+cimage=$bdir/nextsecurity-custom.img.gz
+url=https://nextsec-testing.fra1.digitaloceanspaces.com/targets/x86/64/nextsecurity-22.03.0-x86-64-generic-ext4-combined-efi.img.gz
+
+avail=$(df -BM --output=avail / | tail -n +2 | cut -dM -f1)
+
+function cleanup()
+{
+    # Cleanup existing loopback devices
+    for lo in $(losetup -a | grep $uimage | awk -F: '{print $1;}')
+    do
+        losetup -d $lo
+    done
+    umount $bdir/mnt 2>/dev/null || true
+    rm -rf $bdir/mnt
+    rm -f $uimage
+}
+
+trap cleanup SIGTERM SIGINT EXIT
+
+if [ "$avail" -lt 400 ]; then
+    echo "Not enough free disk space"
+    exit 1
+fi
+
+if [ ! -f "$image" ]; then
+    echo "Downloading image ... "
+    curl -o $image -L $url
+fi
+
+# Make sure everything is clean
+cleanup
 
 echo -n "Exporting configuration ... "
 firewall-export
-mkdir -p $dest_dir
-cp /var/lib/nethserver/firewall-migration/export.tar.gz $dest_dir
 echo "ok"
 
-echo -n "Building the image ... "
-pushd $bdir >/dev/null
-make image FILES="files/" PACKAGES="$(grep "Package: " packages/Packages | cut -d ':' -f 2 | tr '\n' ' ')" &>/var/log/firewall-migrate.log
-mv $bdir/bin/targets/x86/64/nextsecurity-*-generic-ext4-combined-efi.img.gz $image
-make clean &> /dev/null
-popd >/dev/null
+echo -n "Extracting the image ... "
+zcat -f $image > $uimage
 echo "ok"
 
-zcat $image | strings | grep -q "/bin/bash"
-if [ $? -gt 0 ]; then
-    echo "Image creation failed. Please try again"
-    exit 1
-fi
+echo -n "Generating the custom image ... "
+losetup -f -P $uimage
+dev=$(losetup -a | grep $uimage | awk -F: '{print $1;}')p2
+rm -rf $bdir/mnt
+mkdir $bdir/mnt
+mount $dev $bdir/mnt
+mkdir -p $bdir/mnt/$dest_dir
+cp /var/lib/nethserver/firewall-migration/export.tar.gz $bdir/mnt/$dest_dir
+umount $bdir/mnt
+for lo in $(losetup -a | grep $uimage | awk -F: '{print $1;}')
+do
+    losetup -d $lo
+done
+echo "ok"
+
+echo -n "Compressing the custom image ... "
+gzip -c $uimage > $cimage
+echo "ok"
 
 # Apply the image
 if [ -n "$device" ]; then
     echo "Writing the image to disk ... see you on the other side!"
     # Make sure image and bins are saved in RAM
-    /bin/cp $image /run
+    /bin/cp $cimage /run
     /bin/cp /usr/bin/dd /usr/bin/zcat /run
     # Enable sysrq
     echo 1 > /proc/sys/kernel/sysrq
@@ -64,7 +102,7 @@ if [ -n "$device" ]; then
     echo u > /proc/sysrq-trigger
     # Write the image
     # Use 64K block to minimize write errors
-    /run/zcat /run/nextsecurity.img.gz 2>/dev/null | /run/dd of=$device bs=64K iflag=fullblock oflag=nocache,sync status=progress
+    /run/zcat /run/$(basename $cimage) 2>/dev/null | /run/dd of=$device bs=64K iflag=fullblock oflag=nocache,sync status=progress
     # Reboot without sync
     echo "b" > /proc/sysrq-trigger
 fi
