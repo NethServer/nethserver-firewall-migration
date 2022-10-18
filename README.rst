@@ -25,17 +25,19 @@ then execute:
 In-place migration
 ==================
 
-The ``firewall-migrate`` procedure will requires about 510MB of free space.
+The ``firewall-migrate`` procedure will requires about 400MB of free disk space.
 The script will:
 
 * prepare a NextSecurity image containing the firewall export archive
 * write the image to the target disk
 * reboot the system with the newly installed NextSecurity
 
+At first boot, NextSecurity will automatically import the configuration.
+
 Test the image build process:
 
 - execute ``firewall-migrate``
-- if no error occurs, verify the ``/usr/share/nethserver-firewall-migration-builder/nextsecurity-generic-ext4-combined-efi.img.gz`` exists
+- if no error occurs, verify the ``/usr/share/nethserver-firewall-migration-builder/nextsecurity.img.gz`` file exists
 
 To start the migration process, pass the target device as first argument:
 
