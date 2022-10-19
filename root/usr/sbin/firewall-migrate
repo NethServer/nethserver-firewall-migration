@@ -92,7 +92,7 @@ if [ -n "$device" ]; then
     echo "Writing the image to disk ... see you on the other side!"
     # Make sure image and bins are saved in RAM
     /bin/cp $cimage /run
-    /bin/cp /usr/bin/dd /usr/bin/zcat /run
+    /bin/cp /usr/bin/dd /usr/bin/zcat /usr/bin/sleep /usr/sbin/reboot /run
     # Enable sysrq
     echo 1 > /proc/sys/kernel/sysrq
     # Sync filesystems
@@ -103,6 +103,10 @@ if [ -n "$device" ]; then
     # Write the image
     # Use 64K block to minimize write errors
     /run/zcat /run/$(basename $cimage) 2>/dev/null | /run/dd of=$device bs=64K iflag=fullblock oflag=nocache,sync status=progress
+    # Try to safely reboot
+    /run/sleep 1
+    /run/reboot -f
+    /run/sleep 5
     # Reboot without sync
-    echo "b" > /proc/sysrq-trigger
+    echo "b" 2>/dev/null > /proc/sysrq-trigger
 fi
