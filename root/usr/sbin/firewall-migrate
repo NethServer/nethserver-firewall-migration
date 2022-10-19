@@ -52,6 +52,8 @@ if [ "$avail" -lt 400 ]; then
     exit 1
 fi
 
+mkdir -p $bdir
+
 if [ ! -f "$image" ]; then
     echo "Downloading image ... "
     curl -o $image -L $url
