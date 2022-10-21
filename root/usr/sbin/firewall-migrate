@@ -1,0 +1,114 @@
+#!/bin/bash
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+set -e
+
+device=$1
+
+bdir=/usr/share/nethserver-firewall-migration-builder
+dest_dir=usr/share/migration
+image=$bdir/nextsecurity.img.gz
+uimage=${image%.gz}
+cimage=$bdir/nextsecurity-custom.img.gz
+url=https://distfeed.nethserver.org/22.03.2/targets/x86/64/nextsecurity-22.03.2-x86-64-generic-ext4-combined-efi.img.gz
+
+avail=$(df -BM --output=avail / | tail -n +2 | cut -dM -f1)
+
+function cleanup()
+{
+    # Cleanup existing loopback devices
+    for lo in $(losetup -a | grep $uimage | awk -F: '{print $1;}')
+    do
+        losetup -d $lo
+    done
+    umount $bdir/mnt 2>/dev/null || true
+    rm -rf $bdir/mnt
+    rm -f $uimage
+}
+
+trap cleanup SIGTERM SIGINT EXIT
+
+if [ "$avail" -lt 400 ]; then
+    echo "Not enough free disk space"
+    exit 1
+fi
+
+mkdir -p $bdir
+
+if [ ! -f "$image" ]; then
+    echo "Downloading image ... "
+    curl -o $image -L $url
+fi
+
+# Make sure everything is clean
+cleanup
+
+echo -n "Exporting configuration ... "
+firewall-export
+echo "ok"
+
+echo -n "Extracting the image ... "
+zcat -f $image > $uimage
+echo "ok"
+
+echo -n "Generating the custom image ... "
+losetup -f -P $uimage
+dev=$(losetup -a | grep $uimage | awk -F: '{print $1;}')p2
+rm -rf $bdir/mnt
+mkdir $bdir/mnt
+mount $dev $bdir/mnt
+mkdir -p $bdir/mnt/$dest_dir
+cp /var/lib/nethserver/firewall-migration/export.tar.gz $bdir/mnt/$dest_dir
+umount $bdir/mnt
+for lo in $(losetup -a | grep $uimage | awk -F: '{print $1;}')
+do
+    losetup -d $lo
+done
+echo "ok"
+
+echo -n "Compressing the custom image ... "
+gzip -c $uimage > $cimage
+echo "ok"
+
+# Apply the image
+if [ -n "$device" ]; then
+    echo "Writing the image to disk ... see you on the other side!"
+    # Make sure image and bins are saved in RAM
+    /bin/cp $cimage /run
+    /bin/cp /usr/bin/dd /usr/bin/zcat /usr/bin/sleep /usr/sbin/reboot /run
+    # Enable sysrq
+    echo 1 > /proc/sys/kernel/sysrq
+    # Sync filesystems
+    sync
+    echo 3 > /proc/sys/vm/drop_caches
+    # Mount all filesystems in read-only
+    echo u > /proc/sysrq-trigger
+    # Write the image
+    # Use 64K block to minimize write errors
+    /run/zcat /run/$(basename $cimage) 2>/dev/null | /run/dd of=$device bs=64K iflag=fullblock oflag=nocache,sync status=progress
+    # Try to safely reboot
+    /run/sleep 1
+    /run/reboot -f
+    /run/sleep 5
+    # Reboot without sync
+    echo "b" 2>/dev/null > /proc/sysrq-trigger
+fi

@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.0
+Version: 0.0.1
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
