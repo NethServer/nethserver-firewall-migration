@@ -29,7 +29,7 @@ dest_dir=usr/share/migration
 image=$bdir/nextsecurity.img.gz
 uimage=${image%.gz}
 cimage=$bdir/nextsecurity-custom.img.gz
-url=https://nextsec-testing.fra1.digitaloceanspaces.com/targets/x86/64/nextsecurity-22.03.0-x86-64-generic-ext4-combined-efi.img.gz
+url=https://distfeed.nethserver.org/22.03.2/targets/x86/64/nextsecurity-22.03.2-x86-64-generic-ext4-combined-efi.img.gz
 
 avail=$(df -BM --output=avail / | tail -n +2 | cut -dM -f1)
 
