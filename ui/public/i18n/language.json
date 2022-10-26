@@ -1,0 +1,21 @@
+{
+    "about": {
+        "title": "About",
+        "website": "Web site",
+        "bug_tracker": "Bug tracker"
+    },
+    "dashboard":{
+        "title": "Firewall migration",
+        "app": "Firewall migration",
+        "description": "Migrate firewall configuration to NextSecurity platform",
+        "status": "Status",
+        "error_reading_status": "Firewall status invalid",
+        "firewall_not_installed": "The firweall web interface is not installed on this machine. This migration tool can be used only to migrate a firewall installation. Please make sure to have the firewall installed before proceeding."
+    },
+    "docs": {
+        "official_signatures": "Official ClamAV signatures use a large amount of memory. Official signatures detect many old threats but are not very effective against the latest malware.",
+        "unofficial_signatures_ratings": "Higher rating means more blocked threats but also a higher probability of false positives. Recommended ratings are 'Low' and 'Medium'."
+    },
+    "save": "Save",
+    "cancel": "Cancel"
+}

@@ -1,0 +1,14 @@
+#
+# API delegation for nethserver-firewall-migration
+#
+
+Cmnd_Alias NSAPI_NETHSERVER_FIREWALL_MIGRATION = \
+    /usr/libexec/nethserver/api/nethserver-firewall-migration/dashboard/read, \
+    /usr/libexec/nethserver/api/nethserver-firewall-migration/logs/read, \
+    /usr/libexec/nethserver/api/nethserver-firewall-migration/dashboard/read, \
+    /usr/libexec/nethserver/api/nethserver-firewall-migration/dashboard/update, \
+    /usr/libexec/nethserver/api/nethserver-firewall-migration/dashboard/validate 
+
+# server-manager does not require a tty
+Defaults!NSAPI_NETHSERVER_FIREWALL_MIGRATION !requiretty
+

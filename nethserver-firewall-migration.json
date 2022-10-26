@@ -1,0 +1,23 @@
+{
+    "id": "nethserver-firewall-migration",
+    "name": "Firewall Migration",
+    "summary": "Nethserver firewall migration",
+    "description": "Nethserver firewall migration",
+    "url": "",
+    "homepage": "https://github.com/NethServer/nethserver-firewall-migration",
+    "provides": ["nethserver-firewall-migration"],
+    "release": {
+        "version": "_RELEASE_"
+    },
+    "tags": ["migration", "nextsecurity", "nethserver"],
+    "license": "GPL-3.0",
+    "bugs": {
+        "url": "https://github.com/NethServer/dev/issues"
+    },
+    "author": {
+        "name": "Giacomo Sanchietti",
+        "url": "https://github.com/NethServer/nethserver-firewall-migration",
+        "email": "giacomo.sanchietti@nethesis.it"
+    },
+    "icon": "logo.png"
+}
