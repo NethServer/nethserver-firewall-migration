@@ -67,6 +67,7 @@ sub role2interface {
 
 my $ndb = esmith::NetworksDB->open_ro();
 my $fw = new NethServer::Firewall();
+my %ndb_h = esmith::ConfigDB->as_hash('networks');
 
 my %devices;
 my @interfaces;
@@ -77,6 +78,7 @@ my @vlans;
 my @snats;
 my @bridges;
 my @bonds;
+my @skipped;
 
 for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
     my $addr_file = '/sys/class/net/'.$i->key.'/address';
@@ -185,6 +187,8 @@ for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
         $alias{'hwaddr'} = $devices{$eth};
         $alias{'vid'} = $vid;
     } else {
+        $ndb_h{$a->key}{'key'} = $a->key;
+        push(@skipped, $ndb_h{$a->key});
         next;
     }
     push(@aliases, \%alias);
@@ -316,5 +320,6 @@ print(encode_json({
             'vlans' => \@vlans,
             'snats' => \@snats,
             'bridges' => \@bridges,
-            'bonds' => \@bonds
+            'bonds' => \@bonds,
+            'skipped' => \@skipped
         }));

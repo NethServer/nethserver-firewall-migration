@@ -65,17 +65,21 @@ sub rename_zone {
 my $cdb = esmith::ConfigDB->open_ro();
 my $fdb = esmith::ConfigDB->open_ro('fwrules');
 my $fw = new NethServer::Firewall();
+my %rules_h = esmith::ConfigDB->as_hash('fwrules');
 
 my @rules;
+my @skipped;
 
 for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
     my @tmp_rules;
     my $action = $rule->prop('Action');
     my $service = $rule->prop('Service') || 'any';
-    # skip multiwan and QoS rules
-    next if ($action =~ m/^provider|class;/);
-    # skip ndpi rules
-    next if ($service =~ m/^ndpi;/);
+    # skip multiwan,QoS and ndpi rules
+    if ($action =~ m/^provider|class;/ or $service =~ m/^ndpi;/) {
+        $rules_h{$rule->key}{'key'} = $rule->key;
+        push(@skipped, $rules_h{$rule->key});
+        next;
+    }
     my $src_zone = '';
     my $src_addr = $fw->getAddress($rule->prop('Src'), 1);
     if ($src_addr) {
@@ -158,4 +162,4 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
 }
 
 @rules = sort { $a->{'position'} <=> $b->{'position'} } @rules;
-print(encode_json({'rules' => \@rules}));
+print(encode_json({'rules' => \@rules, 'skipped' => \@skipped}));
