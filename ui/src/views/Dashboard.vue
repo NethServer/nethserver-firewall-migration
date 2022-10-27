@@ -2,6 +2,74 @@
   <div>
     <h2>{{ $t("dashboard.title") }}</h2>
 
+    <div
+      class="modal"
+      id="migrateModal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">{{ $t("dashboard.in_place_migrate") }}</h4>
+          </div>
+          <div class="fw-migration" v-if="migrating">
+            <div class="fw-migration">{{ $t("dashboard.migration_in_progress") }}</div>
+            <div class="spinner spinner-lg"></div>
+          </div>
+          <form
+            v-if="!migrating"
+            class="form-horizontal"
+            v-on:submit.prevent=""
+          >
+            <div class="modal-body">
+              <div class="alert alert-warning">
+                <span class="pficon pficon-warning-triangle-o"></span>
+                {{ $t("dashboard.not_reversible") }}
+              </div>
+              <div class="form-group">
+                <label
+                  class="col-sm-3 control-label"
+                  for="textInput-modal-markup"
+                  >{{ $t("dashboard.select_device") }}</label
+                >
+                <div class="col-sm-9 control-div" for="textInput-modal-markup">
+                  <select
+                    title="-"
+                    v-model="disk"
+                    class="combobox form-control"
+                  >
+                    <option v-for="(d, dk) in disks" v-bind:key="dk" :value="d">
+                      {{ d.name }} {{ d.model ? "(" + d.model + ")" : "" }} |
+                      {{ d.size | byteFormat }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                class="btn btn-default"
+                type="button"
+                data-dismiss="modal"
+              >
+                {{ $t("cancel") }}
+              </button>
+              <button
+                class="btn btn-danger btn-large"
+                type="submit"
+                :disabled="!disk"
+                @click="migrate()"
+              >
+                {{ $t("dashboard.migrate") }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <div v-if="!uiLoaded" class="spinner spinner-lg"></div>
     <!-- warning -->
     <div class="alert alert-warning" v-if="uiLoaded && !firewallInstalled">
@@ -20,6 +88,33 @@
     <div v-if="!exported">
       <div class="fw-exporting">{{ $t("dashboard.exporting") }}</div>
       <div v-if="!exported" class="spinner spinner-lg"></div>
+    </div>
+
+    <div v-if="exported">
+      <div class="form-group download-exported row">
+        <label class="col-sm-2 control-label" for="textInput-modal-markup">{{
+          $t("dashboard.download_exported")
+        }}</label>
+        <div class="col-sm-2 control-div" for="textInput-modal-markup">
+          <a id="download-export-button" class="btn btn-default">{{
+            $t("download")
+          }}</a>
+        </div>
+      </div>
+      <div class="form-group download-exported row">
+        <label class="col-sm-2 control-label" for="textInput-modal-markup">{{
+          $t("dashboard.in_place_migrate")
+        }}</label>
+        <div class="col-sm-2 control-div" for="textInput-modal-markup">
+          <a
+            id="migrate-export-button"
+            class="btn btn-primary"
+            @click="openMigrateModal()"
+            >{{ $t("dashboard.migrate") }}</a
+          >
+        </div>
+      </div>
+      <div class="row"></div>
     </div>
 
     <div v-if="exported">
@@ -76,6 +171,9 @@ export default {
       done: [],
       skipped: [],
       show_skipped: {},
+      disk: "",
+      disks: [],
+      migrating: false,
     };
   },
   methods: {
@@ -118,6 +216,7 @@ export default {
           ctx.done = success.done;
           ctx.uiLoaded = true;
           ctx.skipped = success.skipped;
+          ctx.disks = success.disks;
 
           for (const s in ctx.skipped) {
             ctx.show_skipped[s] = false;
@@ -127,17 +226,6 @@ export default {
           ctx.showErrorMessage(ctx.$i18n.t("dashboard.error_exporting"), error);
         }
       );
-    },
-    configurationValidationSuccess(configValidate) {
-      this.uiLoaded = false;
-      nethserver.notifications.success = this.$i18n.t(
-        "dashboard.configuration_update_successful"
-      );
-      nethserver.notifications.error = this.$i18n.t(
-        "settings.configuration_update_failed"
-      );
-
-      var ctx = this;
     },
     toggleSkipped(section) {
       this.show_skipped[section] = !this.show_skipped[section];
@@ -202,6 +290,24 @@ export default {
           return item;
       }
     },
+    openMigrateModal() {
+      $("#migrateModal").modal("show");
+    },
+    migrate() {
+      var ctx = this;
+      nethserver.exec(
+        ["nethserver-firewall-migration/dashboard/execute"],
+        { device: "/dev/" + ctx.disk.name },
+        null,
+        function (success) {
+          ctx.migrating = true;
+          ctx.$forceUpdate();
+        },
+        function (error) {
+          ctx.showErrorMessage(ctx.$i18n.t("dashboard.error_migration"), error);
+        }
+      );
+    },
   },
 };
 </script>
@@ -213,5 +319,12 @@ export default {
 .fw-exporting {
   margin-top: 30px;
   font-size: 120%;
+}
+.download-exported {
+  margin-bottom: 30px;
+  font-size: 110%;
+}
+.fw-migration {
+  padding: 30px;
 }
 </style>

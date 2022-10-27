@@ -55,6 +55,25 @@ def list_done():
        ret.append(os.path.basename(f))
     return ret
 
+def list_disks():
+    ret = list()
+    cmd = "/usr/bin/lsblk -n -P -b -o NAME,LABEL,MODEL,SIZE,TYPE"
+    process = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE)
+    output, error = process.communicate()
+    # line example: NAME="sr0" LABEL="" MODEL="QEMU DVD-ROM    " SIZE="1073741312" TYPE="rom"
+    for line in output.split("\n"):
+        device = dict()
+        tmp = line.split('" ')
+        for chunk in tmp:
+            chunk = chunk.replace('"', '')
+            parsed = chunk.split("=")
+            if len(parsed) < 2:
+                continue
+            device[parsed[0].lower()] = parsed[1].rstrip()
+        if "type" in device and device["type"] == "disk":
+            ret.append(device)
+    return ret;
+
 try:
     line = fileinput.input()[0].rstrip()
     input_json = simplejson.loads(line)
@@ -65,7 +84,7 @@ try:
         print (output)
     if action == 'export':
         exported = export()
-        output = simplejson.dumps({'exported': exported, 'skipped': list_skipped(), 'done': list_done()})
+        output = simplejson.dumps({'exported': exported, 'skipped': list_skipped(), 'done': list_done(), "disks": list_disks()})
         print (output)
 except Exception, e:
     print simplejson.dumps({ 'error': "%s" % e })
