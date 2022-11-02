@@ -14,7 +14,7 @@
         "dns": "System host name and custom DNS entries",
         "flashstart": "DNS cloud filter (Flashstart)",
         "network": "Network configuration",
-        "redirects": "Port forwardings",
+        "redirects": "Port forwarding",
         "routes": "Static routes",
         "rules": "Firewall rules (except for QoS and NDPI rules)",
         "ssh": "SSH configuration",
@@ -41,7 +41,7 @@
         "select_device": "Select the target disk device",
         "in_place_migrate": "In-place migration",
         "download_exported": "Download exported configuration",
-        "migration_in_progress": "The migration process has started and will take few minutes. Please do not poweroff the device. At the end of the migration, current connection to Server Manager will be terminated. Wait a couple of minutes and access the new installation",
+        "migration_in_progress": "The migration process has started and will take few minutes. Please do not power off the device. At the end of the migration, current connection to Server Manager will be terminated. Wait a couple of minutes and access the new installation",
         "not_reversible": "By clicking the 'Migrate' button, this installation will be overwritten with a NextSecurity one. This operation is NOT reversible.",
         "error_reading_status": "Firewall status invalid",
         "firewall_not_installed": "The firewall web interface is not installed on this machine. This migration tool can be used only to migrate a firewall installation. Please make sure to have the firewall installed before proceeding."
