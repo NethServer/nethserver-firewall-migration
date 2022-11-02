@@ -32,6 +32,9 @@ my $fw = new NethServer::Firewall();
 my %ts_ip;
 my %ts_dns;
 
+# Do not produce JSON output if package is not installed
+$cdb->get('blacklist') || exit 0;
+
 my @ip_categories;
 foreach (split(/,/, ($cdb->get_prop('blacklist', 'Categories') || ''))) {
     # truncate category name to overcome Nextsecurity limit

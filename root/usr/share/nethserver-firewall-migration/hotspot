@@ -44,8 +44,10 @@ sub slurp {
 my $cdb = esmith::ConfigDB->open_ro();
 my $ndb = esmith::NetworksDB->open_ro();
 
-my %config;
+# Do not produce JSON output if package is not installed
+$cdb->get('dedalo') || exit 0;
 
+my %config;
 my $host = $cdb->get_prop('dedalo', 'IcaroHost') || 'my.nethspot.com';
 my $base_url = "https://$host";
 $config{'disabled'} = ($cdb->get_prop('dedalo', 'status') || '') eq 'enabled' ? '0' : '1';
