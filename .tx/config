@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[nethserver.CockpitFirewallMigration]
+source_file = ui/public/i18n/language.json
+source_lang = en
+type = KEYVALUEJSON

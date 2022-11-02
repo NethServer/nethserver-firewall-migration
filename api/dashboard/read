@@ -1,0 +1,100 @@
+#!/usr/bin/python
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethserver@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+import os
+import sys
+import glob
+import base64
+import subprocess
+import simplejson
+import fileinput
+
+def is_firewall_installed():
+    return os.path.exists('/usr/share/cockpit/nethserver/applications/nethserver-firewall-base.json')
+
+def export():
+    process = subprocess.Popen(["/usr/sbin/firewall-export"], stdout=subprocess.PIPE)
+    output, error = process.communicate()
+    return process.returncode == 0 and os.path.exists('/var/lib/nethserver/firewall-migration/export.tar.gz')
+
+def list_skipped():
+    ret = dict()
+    for f in  glob.glob('/var/lib/nethserver/firewall-migration/skipped/*'):
+        try:
+            with open(f, 'r') as fp:
+                json = simplejson.load(fp)
+        except:
+            continue
+        if json:
+            name = os.path.basename(f)[:-len('.json')]
+            ret[name]=json
+   
+    return ret
+
+def list_done():
+    ret = list()
+    for f in  glob.glob('/var/lib/nethserver/firewall-migration/done/*'):
+       ret.append(os.path.basename(f))
+    return ret
+
+def encode_export_archive():
+    with open("/var/lib/nethserver/firewall-migration/export.tar.gz", "rb") as archive:
+        estr = base64.b64encode(archive.read())
+        return estr.decode('utf-8')
+
+def list_disks():
+    ret = list()
+    cmd = "/usr/bin/lsblk -n -P -b -o NAME,LABEL,MODEL,SIZE,TYPE"
+    process = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE)
+    output, error = process.communicate()
+    # line example: NAME="sr0" LABEL="" MODEL="QEMU DVD-ROM    " SIZE="1073741312" TYPE="rom"
+    for line in output.split("\n"):
+        device = dict()
+        tmp = line.split('" ')
+        for chunk in tmp:
+            chunk = chunk.replace('"', '')
+            parsed = chunk.split("=")
+            if len(parsed) < 2:
+                continue
+            device[parsed[0].lower()] = parsed[1].rstrip()
+        if "type" in device and device["type"] == "disk":
+            ret.append(device)
+    return ret;
+
+try:
+    line = fileinput.input()[0].rstrip()
+    input_json = simplejson.loads(line)
+    action = input_json["action"]
+
+    if action == 'status':
+        output = simplejson.dumps({'firewallInstalled': is_firewall_installed()})
+        print (output)
+    if action == 'export':
+        exported = export()
+        output = simplejson.dumps({'exported': exported, 'skipped': list_skipped(), 'done': list_done(), "disks": list_disks()})
+        print (output)
+    if action == 'download':
+        output = simplejson.dumps({'filename': 'export.tar.gz', 'data': encode_export_archive()})
+        print (output)
+except Exception, e:
+    print simplejson.dumps({ 'error': "%s" % e })
+    sys.exit(1)

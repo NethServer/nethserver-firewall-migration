@@ -29,12 +29,14 @@ tmp_dir=$(mktemp -d)
 mkdir -p "$tmp_dir/export"
 mkdir -p $OUT_DIR
 mkdir -p "$OUT_DIR/skipped"
+mkdir -p "$OUT_DIR/done"
 
 for f in $(find /usr/share/nethserver-firewall-migration -type f -executable)
 do
    name=$(basename $f)
    $f > "$tmp_dir/export/$name.json"
    cat "$tmp_dir/export/$name.json" | jq -r .skipped > "$OUT_DIR/skipped/$name.json"
+   [ -s "$tmp_dir/export/$name.json" ] && touch "$OUT_DIR/done/$name" 
 done
 
 pushd $tmp_dir >/dev/null

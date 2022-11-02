@@ -41,6 +41,9 @@ my $cdb = esmith::ConfigDB->open_ro();
 
 my %config;
 
+# Do not produce JSON output if package is not installed
+$cdb->get('flashstart') || exit 0;
+
 my @bypass = split(/,/, ($cdb->get_prop('flashstart', 'Bypass') || ''));
 my @roles;
 for (split(/,/, ($cdb->get_prop('flashstart', 'Roles') || ''))) {

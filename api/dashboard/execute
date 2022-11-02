@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/bin/bash
 
 #
 # Copyright (C) 2022 Nethesis S.r.l.
@@ -20,17 +20,11 @@
 # along with NethServer.  If not, see COPYING.
 #
 
-use strict;
-use warnings;
-use JSON;
-use esmith::ConfigDB;
+#. /usr/libexec/nethserver/api/lib/helper_functions
 
-my $cdb = esmith::ConfigDB->open_ro();
+# Read JSON from stdin
+data=$(cat /dev/stdin)
 
-my %subscription;
+device=$(echo $data | jq -r '.device')
 
-# Do not produce JSON output if the machine is not registered
-$subscription{'system_id'}= $cdb->get_prop('subscription', 'SystemId') || exit 0;
-$subscription{'secret'} = $cdb->get_prop('subscription', 'Secret') || '';
-
-print(encode_json({'subscription' => \%subscription}));
+exec /usr/sbin/firewall-migrate "$device"
