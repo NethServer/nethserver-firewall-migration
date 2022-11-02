@@ -15,7 +15,9 @@
             <h4 class="modal-title">{{ $t("dashboard.in_place_migrate") }}</h4>
           </div>
           <div class="fw-migration" v-if="migrating">
-            <div class="fw-migration">{{ $t("dashboard.migration_in_progress") }}</div>
+            <div class="fw-migration">
+              {{ $t("dashboard.migration_in_progress") }}
+            </div>
             <div class="spinner spinner-lg"></div>
           </div>
           <form
@@ -231,6 +233,13 @@ export default {
       this.show_skipped[section] = !this.show_skipped[section];
       this.$forceUpdate();
     },
+    formatTarget(target) {
+      if (target.includes(";")) {
+        return target.split(";")[1];
+      } else {
+        return target;
+      }
+    },
     formatSkipped(key, item) {
       switch (key) {
         case "network":
@@ -251,40 +260,46 @@ export default {
             return item;
           }
         case "rules":
+          var line = "";
           if (item["Action"].startsWith("class;")) {
-            return (
+            line =
               this.$i18n.t("dashboard.qos") +
               " - " +
               this.$i18n.t("dashboard.source") +
               ": " +
-              item["Src"] +
+              this.formatTarget(item["Src"]) +
               " " +
               this.$i18n.t("dashboard.destination") +
               ": " +
-              item["Dst"] +
+              this.formatTarget(item["Dst"]) +
               " " +
               this.$i18n.t("dashboard.class") +
               ": " +
-              item["Action"].replace("class;", "")
-            );
+              item["Action"].replace("class;", "");
           } else if (item["Service"].startsWith("ndpi;")) {
-            return (
+            line =
               this.$i18n.t("dashboard.dpi") +
               " - " +
               this.$i18n.t("dashboard.source") +
               ": " +
-              item["Src"] +
+              this.formatTarget(item["Src"]) +
               " " +
               this.$i18n.t("dashboard.destination") +
               ": " +
-              item["Dst"] +
+              this.formatTarget(item["Dst"]) +
               " " +
               this.$i18n.t("dashboard.service") +
               ": " +
-              item["Service"].replace("ndpi;", "")
-            );
+              item["Service"].replace("ndpi;", "");
+          }
+          if (line) {
+            line =
+              line +
+              " " +
+              (item["Description"] ? " - " + item["Description"] : "");
+            return line;
           } else {
-            return itme;
+            return item;
           }
         default:
           return item;
