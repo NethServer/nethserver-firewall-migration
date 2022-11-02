@@ -14,11 +14,15 @@
           <div class="modal-header">
             <h4 class="modal-title">{{ $t("dashboard.in_place_migrate") }}</h4>
           </div>
+
           <div class="fw-migration" v-if="migrating">
             <div class="fw-migration">
               {{ $t("dashboard.migration_in_progress") }}
+              <div class="spinner spinner-sm"></div>
             </div>
-            <div class="spinner spinner-lg"></div>
+          </div>
+          <div class="fw-migration" v-if="migrating">
+            <pre>{{ output }}</pre>
           </div>
           <form
             v-if="!migrating"
@@ -179,6 +183,7 @@ export default {
       disk: "",
       disks: [],
       migrating: false,
+      output: "",
     };
   },
   methods: {
@@ -340,16 +345,18 @@ export default {
     },
     migrate() {
       var ctx = this;
-      nethserver.exec(
+      nethserver.execRaw(
         ["nethserver-firewall-migration/dashboard/execute"],
         { device: "/dev/" + ctx.disk.name },
-        null,
-        function (success) {
+        function (stream) {
           ctx.migrating = true;
-          ctx.$forceUpdate();
+          ctx.output = ctx.output + stream;
+        },
+        function (success) {
+          //this will never be executed
         },
         function (error) {
-          ctx.showErrorMessage(ctx.$i18n.t("dashboard.error_migration"), error);
+          //this will never be executed
         }
       );
     },
@@ -370,6 +377,6 @@ export default {
   font-size: 110%;
 }
 .fw-migration {
-  padding: 30px;
+  padding: 5px;
 }
 </style>
