@@ -98,9 +98,12 @@
           $t("dashboard.download_exported")
         }}</label>
         <div class="col-sm-2 control-div" for="textInput-modal-markup">
-          <a id="download-export-button" class="btn btn-default">{{
-            $t("download")
-          }}</a>
+          <a
+            id="download-export-button"
+            class="btn btn-default"
+            ref="downloadButton"
+            >{{ $t("download") }}</a
+          >
         </div>
       </div>
       <div class="form-group download-exported row">
@@ -223,6 +226,7 @@ export default {
           for (const s in ctx.skipped) {
             ctx.show_skipped[s] = false;
           }
+          ctx.setDownload();
         },
         function (error) {
           ctx.showErrorMessage(ctx.$i18n.t("dashboard.error_exporting"), error);
@@ -304,6 +308,32 @@ export default {
         default:
           return item;
       }
+    },
+    setDownload() {
+      var ctx = this;
+
+      nethserver.exec(
+        ["nethserver-firewall-migration/dashboard/read"],
+        {
+          action: "download",
+        },
+        null,
+        function (success) {
+          try {
+            success = JSON.parse(success);
+          } catch (e) {
+            console.error(e);
+          }
+          var blob = "data:application/octet-stream;base64," + success.data;
+          var encodedUri = encodeURI(blob);
+          $("#download-export-button")
+            .attr("download", success.filename)
+            .attr("href", encodedUri);
+        },
+        function (error, data) {
+          console.error(error, data);
+        }
+      );
     },
     openMigrateModal() {
       $("#migrateModal").modal("show");
