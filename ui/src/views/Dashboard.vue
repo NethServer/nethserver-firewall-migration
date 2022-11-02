@@ -18,7 +18,8 @@
           <div class="fw-migration" v-if="migrating">
             <div class="fw-migration">
               {{ $t("dashboard.migration_in_progress") }}
-              <div class="spinner spinner-sm"></div>
+              <a :href="nextLink">{{ nextLink }}</a>
+              <div v-show="!hideSpinner" class="spinner spinner-sm"></div>
             </div>
           </div>
           <div class="fw-migration" v-if="migrating">
@@ -184,6 +185,8 @@ export default {
       disks: [],
       migrating: false,
       output: "",
+      nextLink: "https://" + window.location.host.split(":")[0],
+      hideSpinner: false,
     };
   },
   methods: {
@@ -345,6 +348,10 @@ export default {
     },
     migrate() {
       var ctx = this;
+      // hide spinner after 2 minutes
+      setTimeout(() => {
+        ctx.hideSpinner = true;
+      }, 1000 * 120);
       nethserver.execRaw(
         ["nethserver-firewall-migration/dashboard/execute"],
         { device: "/dev/" + ctx.disk.name },
