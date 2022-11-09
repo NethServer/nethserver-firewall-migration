@@ -1,0 +1,109 @@
+#!/usr/bin/perl
+
+#
+# Copyright (C) 2022 Nethesis S.r.l.
+# http://www.nethesis.it - nethrw@nethesis.it
+#
+# This script is part of NethServer.
+#
+# NethServer is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License,
+# or any later version.
+#
+# NethServer is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with NethServer.  If not, see COPYING.
+#
+
+use strict;
+use warnings;
+use JSON;
+use esmith::ConfigDB;
+
+sub slurp {
+    my $file = shift;
+    if (! -f $file) {
+        return '';
+    }
+    my $data;
+    open my $fh, '<', $file or die $!;
+    local $/ = undef;
+    $data = <$fh>;
+    close $fh;
+
+    return $data;
+}
+
+my $pdb = esmith::ConfigDB->open_ro('proxypass');
+
+my @locations;
+my @servers;
+
+# Exit if VPN has not beend installed
+if (!$pdb) {
+    exit 0;
+}
+
+my $certs = decode_json(`/usr/libexec/nethserver/cert-list`);
+for ($pdb->get_all()) {
+    my $type = $_->prop('type');
+    my $config = {};
+    $_->prop('Target') || next;
+    $config->{'description'} = $_->prop('Description') || '';
+    my @allow = split(/,/, ($_->prop('ValidFrom') || ''));
+    my $cver = $_->prop('CertVerification') || 'yes';
+    if ($cver eq 'no') {
+        $config->{'proxy_ssl_verify'} = 'off';
+    }
+    if ($type eq 'ProxyPass') {
+        $config->{'location'} = "/".$_->key;
+        $config->{'proxy_pass'} = $_->prop('Target');
+        $config->{'allow'} = \@allow;
+        push(@locations, $config);
+    } elsif ($type eq 'VhostReverse') {
+        my @slocations = ({ "location" => "/", 'proxy_pass' => $_->prop('Target'), 'allow' => \@allow});
+        $config->{'server_name'} = $_->key;
+        if (($_->prop('AllowEncodedSlashes') || 'no') eq 'yes') {
+            $config->{'location' } .= '$request_uri';
+        }
+        if (($_->prop('PreserveHost') || 'yes') eq 'yes') {
+            $config->{'proxy_set_header' } = ['Host $http_host'];
+        }
+        if (($_->prop('WebSockets') || 'disabled') eq 'enabled') {
+             push(@slocations, {
+               'location' => $_->prop('WebSocketsPath'),
+               'proxy_pass' => "/".$_->prop('Target'),
+               'allow' => \@allow,
+               'proxy_http_version' => '1.1',
+               'proxy_set_header' => [ 'Upgrade $http_upgrade', 'Connection "upgrade"' ]
+            });
+        }
+        $config->{'locations'} = \@slocations;
+        my $cert = $_->prop('SslCertificate') || '';
+        if ($cert eq '') {
+            for my $k (keys %$certs) {
+                if ($certs->{$k}->{'default'}) {
+                    $config->{'ssl_certificate'} = slurp($k);
+                    $config->{'ssl_certificate_key'} = slurp($certs->{$k}->{'key'});
+                }
+            }
+        } else {
+           $config->{'ssl_certificate'} = slurp($cert);
+           $config->{'ssl_certificate_key'} = slurp($certs->{$cert}->{'key'});
+        }
+        $config->{'ssl_session_cache'} = 'shared:SSL:32k';
+        $config->{'ssl_session_timeout'} = '64m';
+        $config->{'listen'} = ["443 ssl", "[::]:443 ssl"];
+        $config->{'nginx._lan.error_log'} = 'syslog:server=unix:/dev/log';
+        $config->{'nginx._lan.access_log'} = 'syslog:server=unix:/dev/log';
+
+        push(@servers, $config);
+    } 
+}
+
+print(encode_json({'servers' => \@servers, 'locations' => \@locations}));

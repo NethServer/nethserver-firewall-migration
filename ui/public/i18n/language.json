@@ -25,6 +25,8 @@
         "openvpn_tunnels": "OpenVPN runnels",
         "time": "Date and time settings",
         "wan": "MultiWAN configuration",
+        "acme": "Let's Encrypt configuration",
+        "reverse_proxy": "Proxy pass rules",
         "hotspot": "HotSpot (dedalo)",
         "skipped": "The following configurations will not be exported",
         "skipped_network": "Network: invalid interfaces",
