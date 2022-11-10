@@ -22,7 +22,7 @@
         "threat_shield": "Threat shield",
         "ipsec": "IPSec tunnels",
         "openvpn": "OpenVPN roadwarriors (certificate authentication only)",
-        "openvpn_tunnels": "OpenVPN runnels",
+        "openvpn_tunnels": "OpenVPN tunnels",
         "time": "Date and time settings",
         "wan": "MultiWAN configuration",
         "acme": "Let's Encrypt configuration",
