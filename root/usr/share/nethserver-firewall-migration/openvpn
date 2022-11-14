@@ -25,6 +25,9 @@ use warnings;
 use JSON;
 use esmith::ConfigDB;
 use NethServer::Firewall;
+use NethServer::SSSD;
+use NethServer::AccountsList;
+use NethServer::LdapClient;
 
 sub slurp {
     my $file = shift;
@@ -40,9 +43,28 @@ sub slurp {
     return $data;
 }
 
+our %passwords;
+my $al = NethServer::AccountsList->new();
+sub get_user_password
+{
+    my $message = shift;
+    my $entry = shift;
+
+    my $uid = lc($entry->get_value('uid'));
+    return "" if ($al->is_system_user('uid'));
+
+    # remove {CRYPT} prefix from password
+    my $password = substr($entry->get_value('userPassword'), 7);
+    # skip empty passwords
+    return "" if ($password eq '!!');
+    $passwords{$uid} = $password;
+}
+
+
 my $vdb = esmith::ConfigDB->open_ro('vpn');
 my $cdb = esmith::ConfigDB->open_ro();
 my $fw = new NethServer::Firewall();
+my $sssd = NethServer::SSSD->new();
 
 my @users;
 my %certs;
@@ -70,6 +92,7 @@ $rw_options{'push'} = \@push_options;
 
 $rw{'options'} = \%rw_options;
 $rw{'ca'} = \%ca;
+$rw{'auth'} = $cdb->get_prop('openvpn@host-to-net', 'AuthMode');
 
 # Parse roadwarrior config
 open my $fh, '<', '/etc/openvpn/host-to-net.conf';
@@ -80,7 +103,7 @@ while( my $line = <$fh>) {
     my $nparts = scalar @tmp;
     my $option = shift(@tmp);
     # exclude options which will be remapped
-    next if $option =~ m/status|cd|up|down|syslog|script\-security|dh|key|crl\-verify|log\-append|cert|ca|client\-connect|client\-disconnect|management|compression|auth\-user\-pass\-verify|client\-config\-dir|ifconfig\-pool\-persist/;
+    next if $option =~ m/status|cd|up|down|syslog|script\-security|dh|key|crl\-verify|log\-append|cert|ca|client\-connect|client\-disconnect|management|compression|auth\-user\-pass\-verify|client\-config\-dir|ifconfig\-pool\-persist|plugin/;
 
     if ($nparts == 1) {
         $option =~ s/-/_/g;
@@ -118,6 +141,22 @@ while( my $line = <$fh>) {
 }
 close $fh;
 
+if ($sssd->isLdap() && $sssd->isLocalProvider()) {
+    my $ldap = NethServer::LdapClient::connect($sssd, 'timeout' => 30);
+    if ($ldap) {
+        NethServer::LdapClient::paged_search($sssd, $ldap,
+            'base' => $sssd->userDN(),
+            'scope' => 'subtree',
+            'deref' => 'never',
+            'timelimit' => 30,
+            'filter' => '(objectClass=posixAccount)',
+            'callback' => \&get_user_password
+        );
+        $ldap->unbind();
+        $ldap->disconnect();
+    }
+}
+
 for ($vdb->get_all_by_prop('type', 'vpn')) {
     my $status = $_->prop('status') || next;
     push(@users, {
@@ -126,6 +165,7 @@ for ($vdb->get_all_by_prop('type', 'vpn')) {
             'ipaddr' => $_->prop('OpenVpnIp') || '',
             'crt' => $certs{$_->key}{'crt'},
             'key' => $certs{$_->key}{'key'},
+            'password' => $passwords{$_->key} || ''
     });
 }
 
