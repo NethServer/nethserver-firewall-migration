@@ -71,6 +71,7 @@ my %certs;
 my %ca;
 my %rw;
 my %rw_options;
+my %ldap;
 
 if (! -f '/etc/openvpn/host-to-net.conf') {
     exit 0;
@@ -93,6 +94,19 @@ $rw_options{'push'} = \@push_options;
 $rw{'options'} = \%rw_options;
 $rw{'ca'} = \%ca;
 $rw{'auth'} = $cdb->get_prop('openvpn@host-to-net', 'AuthMode');
+$rw{'ldap'} = \%ldap;
+
+if ($rw{'auth'} =~ m/password/) {
+    my $ldap_config=decode_json(`echo '{"action": "dump"}' | /usr/libexec/nethserver/api/system-accounts-provider/read`);
+    if ($ldap_config->{'IsLocal'} == '0') {
+        $ldap{'uri'} = $ldap_config->{'LdapURI'};
+        $ldap{'base_dn'} = $ldap_config->{'BaseDN'};
+        $ldap{'user_dn'} = $ldap_config->{'UserDN'};
+        $ldap{'starttls'} = $ldap_config->{'StartTls'} ? '1' : '0';
+        $ldap{'user_attr'} = $ldap_config->{'isAD'} ? 'cn' : 'uid';
+        $ldap{'tls_reqcert'} = 'never';
+    }
+}
 
 # Parse roadwarrior config
 open my $fh, '<', '/etc/openvpn/host-to-net.conf';
