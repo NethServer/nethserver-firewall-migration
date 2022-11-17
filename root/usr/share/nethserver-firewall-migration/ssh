@@ -27,6 +27,9 @@ use esmith::ConfigDB;
 
 sub raw_slurp {
     my $file = shift;
+    if (! -f $file) {
+        return '';
+    }
     my $data;
     open my $fh, '<', $file or die;
     local $/ = undef;
