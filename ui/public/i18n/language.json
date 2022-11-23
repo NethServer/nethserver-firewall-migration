@@ -28,6 +28,7 @@
         "acme": "Let's Encrypt configuration",
         "reverse_proxy": "Proxy pass rules",
         "hotspot": "HotSpot (dedalo)",
+        "passwd": "Password of root user",
         "skipped": "The following configurations will not be exported",
         "skipped_network": "Network: invalid interfaces",
         "skipped_rules": "Firewall rules",
