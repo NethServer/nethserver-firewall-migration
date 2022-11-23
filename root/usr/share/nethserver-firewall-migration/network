@@ -191,6 +191,7 @@ for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
         push(@skipped, $ndb_h{$a->key});
         next;
     }
+    $alias{'zone'} = role2zone($parent->prop('role'));
     push(@aliases, \%alias);
 
     # Retrieve source NAT, if present
