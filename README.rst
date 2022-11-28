@@ -47,6 +47,15 @@ To start the migration process, pass the target device as first argument:
 
 **NOTE**: The script will wipe the NethServer installation. The script does not ask for confirmation!
 
+Cleanup
+-------
+
+The downloaded image is preserved to speed up multiple firewall-migrate runs.
+To cleanup existing images and download a new one on next run, execute: ::
+
+  rm -rf /usr/share/nethserver-firewall-migration-builder/
+
+
 Not migrated
 ============
 
