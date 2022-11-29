@@ -294,10 +294,16 @@ for my $i ((@interfaces,@bonds)) {
         push(@$network, $i->{'interface'});
     } else {
         my @network = ($i->{'interface'});
+        my $input = 'REJECT';
+        if ($i->{'zone'} eq 'lan') {
+            $input = 'ACCEPT';
+        } elsif ($i->{'zone'} eq 'wan') {
+            $input = 'DROP';
+        }
         $zones{$i->{'zone'}} = {
             'name' => $i->{'zone'},
             'network' => \@network,
-            'input' => $i->{'zone'} eq 'lan' ? 'ACCEPT' : 'REJECT',
+            'input' => $input,
             'forward' => $i->{'zone'} eq 'lan' ? 'ACCEPT' : 'REJECT',
             'output' => 'ACCEPT'
         };
