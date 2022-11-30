@@ -61,7 +61,7 @@ for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
 my @track_ip = split(/,/, $cdb->get_prop('firewall', 'CheckIP'));
 $general{'mode'} = $cdb->get_prop('firewall', 'WanMode') || 'balanced';
 $general{'track_ip'} = \@track_ip;
-$general{'reliability'} = scalar(@track_ip);
+$general{'reliability'} = '1';
 $general{'interval'} = $cdb->get_prop('firewall', 'PingInterval') || '5';
 
 for my $provider ($ndb->get_all_by_prop('type' => 'provider')) {
