@@ -23,14 +23,17 @@
 use strict;
 use warnings;
 use JSON;
+use URI;
 use esmith::ConfigDB;
 
 my $cdb = esmith::ConfigDB->open_ro();
 
 my %subscription;
+my $portal = URI->new(($cdb->get_prop('subscription','PricingUrl') || ''));
 
 # Do not produce JSON output if the machine is not registered
 $subscription{'system_id'}= $cdb->get_prop('subscription', 'SystemId') || exit 0;
 $subscription{'secret'} = $cdb->get_prop('subscription', 'Secret') || '';
+$subscription{'type'} = ($portal->host =~ m/nethesis/) ? 'enterprise' : 'community';
 
 print(encode_json({'subscription' => \%subscription}));
