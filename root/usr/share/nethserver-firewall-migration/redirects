@@ -34,26 +34,34 @@ my $reflection = $cdb->get_prop('firewall', 'HairpinNat') eq 'enabled' ? '1' : '
 my @redirects;
 
 my $counter = 1;
-for ($pdb->get_all_by_prop('type', 'pf')) {
-    my $proto = $_->prop('Proto');
+foreach my $pf ($pdb->get_all_by_prop('type', 'pf')) {
+    my $proto = $pf->prop('Proto');
     $proto =~ s/,/ /g;
-    my @allow = split(/,/,$_->prop('Allow') || '');
-    my $log = $_->prop('Log') || 'none';
-    push(@redirects, {
-         'target' => 'DNAT',
-         'proto' => $proto,
-         'src_dport' => $_->prop('Src'),
-         'dest_port' => $_->prop('Dst'),
-         'dest_ip' => ,$fw->getAddress($_->prop('DstHost')),
-         'description' => ,$_->prop('Description'),
-         'enabled' => $_->prop('status') eq 'enabled' ? '1' : '0',
-         'src_dip' => $_->prop('OriDst') || '',
-         'name' => , $_->prop('Description') || "pf$counter",
-         'reflection' => $reflection,
-         'src_ip' => \@allow,
-         'log' => $log eq 'none' ? '0' : '1',
-         'key' => "pf$counter"
-    });
+    my @allow = (split(/,/,($pf->prop('Allow') || '')));
+    # make sure to execute the below loop at least once
+    if (!@allow) {
+        @allow = ("");
+    }
+    my $ai = 1;
+    my $log = $pf->prop('Log') || 'none';
+    for my $a (@allow) {
+        push(@redirects, {
+            'target' => 'DNAT',
+            'proto' => $proto,
+            'src_dport' => $pf->prop('Src'),
+            'dest_port' => $pf->prop('Dst'),
+            'dest_ip' => $fw->getAddress($pf->prop('DstHost')),
+            'description' => $pf->prop('Description'),
+            'enabled' => $pf->prop('status') eq 'enabled' ? '1' : '0',
+            'src_dip' => $pf->prop('OriDst') || '',
+            'name' => $pf->prop('Description') || "pf${counter}_${ai}",
+            'reflection' => $reflection,
+            'src_ip' => $a,
+            'log' => $log eq 'none' ? '0' : '1',
+            'key' => "pf${counter}_${ai}"
+        });
+        $ai++;
+    }
     $counter++;
 }
 
