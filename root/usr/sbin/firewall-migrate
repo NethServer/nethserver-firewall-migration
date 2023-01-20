@@ -104,7 +104,7 @@ if [ -n "$device" ]; then
     echo u > /proc/sysrq-trigger
     # Write the image
     # Use 64K block to minimize write errors
-    /run/zcat /run/$(basename $cimage) 2>/dev/null | /run/dd of=$device bs=64K iflag=fullblock oflag=nocache,sync status=progress
+    /run/zcat /run/$(basename $cimage) 2>/dev/null | /run/dd of=$device bs=1M iflag=fullblock conf=fsync status=progress
     # Try to safely reboot
     /run/sleep 1
     /run/reboot -f
