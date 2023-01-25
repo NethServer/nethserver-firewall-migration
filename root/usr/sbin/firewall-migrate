@@ -29,7 +29,7 @@ dest_dir=usr/share/migration
 image=$bdir/nextsecurity.img.gz
 uimage=${image%.gz}
 cimage=$bdir/nextsecurity-custom.img.gz
-url=https://distfeed.nethserver.org/22.03.2/targets/x86/64/nextsecurity-22.03.2-x86-64-generic-ext4-combined-efi.img.gz
+base_url=https://distfeed.nethserver.org
 
 avail=$(df -BM --output=avail / | tail -n +2 | cut -dM -f1)
 
@@ -56,7 +56,14 @@ mkdir -p $bdir
 
 if [ ! -f "$image" ]; then
     echo "Downloading image ... "
-    curl -o $image -L $url
+    release=$(curl -s -L -m 30 $base_url/latest_release)
+    img_name="nextsecurity-$release-x86-64-generic-ext4-combined-efi.img.gz"
+    curl -s -L --connect-timeout 20 -o $image $base_url/$release/targets/x86/64/$img_name
+    sha=$(curl -s -L -m 30 $base_url/$release/targets/x86/64/sha256sums | grep $img_name | awk '{print $1}')
+    if [ "$sha" != $(sha256sum $image | awk '{print $1}') ]; then
+        rm -f $image
+        exit 1
+    fi
 fi
 
 # Make sure everything is clean
