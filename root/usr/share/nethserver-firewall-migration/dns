@@ -65,6 +65,13 @@ foreach (split(/,/, $cdb->get_prop('dnsmasq', 'DomainRedirection') || '')) {
 
 push(@forwardings, split(/,/, $cdb->get_prop('dns', 'NameServers') || ''));
 
+# Enable forwarding for Active Directory
+if (($cdb->get_prop('sssd', 'Provider') || '') eq 'ad' && $cdb->get_prop('sssd', 'AdDns'))
+{
+    my $realm = lc($cdb->get_prop('sssd', 'Realm'));
+    push(@forwardings, "/$realm/". $cdb->get_prop('sssd', 'AdDns'));
+}
+
 # Collect DNS hosts and wildcard domains
 foreach ($hdb->get_all_by_prop('type'=>'remote')) {
     my $wildcard =  $_->prop('WildcardMode') || 'disabled';
