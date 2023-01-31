@@ -56,6 +56,7 @@ $general{'cachesize'} = $cdb->get_prop('dnsmasq', 'CacheSize');
 $general{'dhcp_boot'} = $cdb->get_prop('dnsmasq', 'dhcp-boot');
 $general{'enable_tftp'} = $cdb->get_prop('dnsmasq', 'tftp-status') eq 'enabled' ? 1 : 0;
 $general{'allservers'} = 1;
+$general{'rebind_protection'} = 0;
 
 foreach (split(/,/, $cdb->get_prop('dnsmasq', 'DomainRedirection') || '')) {
     my ($domain, $address) = split(/:/, $_);
