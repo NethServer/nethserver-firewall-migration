@@ -8,8 +8,8 @@
 set -e
 
 pushd ui
-npm install
-npm run build
+NODE_OPTIONS="--openssl-legacy-provider" npm install
+NODE_OPTIONS="--openssl-legacy-provider" npm run build
 popd
 
 tar -C ui/dist -c -z -f nethserver-firewall-migration-cockpit.tar.gz .
