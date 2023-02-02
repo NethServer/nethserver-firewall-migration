@@ -4,6 +4,39 @@
 
     <div
       class="modal"
+      id="downloadModal"
+      tabindex="-1"
+      role="dialog"
+      data-backdrop="static"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">
+              {{ $t("dashboard.download_usb_image") }}
+            </h4>
+          </div>
+
+          <div class="fw-migration" v-if="migrating">
+            <div class="fw-migration">
+              {{ $t("dashboard.preparing_image") }}
+              <div v-show="!hideSpinner" class="spinner spinner-sm"></div>
+            </div>
+          </div>
+          <div class="fw-migration" v-if="migrating">
+            <pre>{{ output }}</pre>
+          </div>
+          <form
+            v-if="!migrating"
+            class="form-horizontal"
+            v-on:submit.prevent=""
+          ></form>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal"
       id="migrateModal"
       tabindex="-1"
       role="dialog"
@@ -107,6 +140,20 @@
             id="download-export-button"
             class="btn btn-default"
             ref="downloadButton"
+            @click="downloadFile('/var/lib/nethserver/firewall-migration/export.tar.gz')"
+            >{{ $t("download") }}</a
+          >
+        </div>
+      </div>
+      <div class="form-group download-exported row">
+        <label class="col-sm-2 control-label" for="textInput-modal-markup">{{
+          $t("dashboard.download_usb_image")
+        }}</label>
+        <div class="col-sm-2 control-div" for="textInput-modal-markup">
+          <a
+            id="download-export-button"
+            class="btn btn-default"
+            @click="openDownloadModal()"
             >{{ $t("download") }}</a
           >
         </div>
@@ -187,6 +234,7 @@ export default {
       output: "",
       nextLink: "https://" + window.location.host.split(":")[0],
       hideSpinner: false,
+      imageReady: false,
     };
   },
   methods: {
@@ -234,10 +282,57 @@ export default {
           for (const s in ctx.skipped) {
             ctx.show_skipped[s] = false;
           }
-          ctx.setDownload();
         },
         function (error) {
           ctx.showErrorMessage(ctx.$i18n.t("dashboard.error_exporting"), error);
+        }
+      );
+    },
+    prepareImageDownload() {
+      var ctx = this;
+      nethserver.execRaw(
+        ["nethserver-firewall-migration/dashboard/execute"],
+        {},
+        function (stream) {
+          ctx.migrating = true;
+          ctx.output = ctx.output + stream;
+        },
+        function (success) {
+          ctx.migrating = false;
+          ctx.output = "";
+          ctx.imageReady = true;
+          ctx.downloadFile("/usr/share/nethserver-firewall-migration-builder/nextsecurity-custom.img.gz");
+                    $("#downloadModal").modal("hide");
+
+        },
+        function (error) {
+          console.error("Can't download image");
+        }
+      );
+    },
+    setImageDownload() {
+      var ctx = this;
+
+      nethserver.exec(
+        ["nethserver-firewall-migration/dashboard/read"],
+        {
+          action: "download-image",
+        },
+        null,
+        function (success) {
+          try {
+            success = JSON.parse(success);
+          } catch (e) {
+            console.error(e);
+          }
+          var blob = "data:application/octet-stream;base64," + success.data;
+          var encodedUri = encodeURI(blob);
+          $("#download-image-button")
+            .attr("download", success.filename)
+            .attr("href", encodedUri);
+        },
+        function (error, data) {
+          console.error(error, data);
         }
       );
     },
@@ -254,6 +349,8 @@ export default {
     },
     formatSkipped(key, item) {
       switch (key) {
+        case "static":
+          return this.$i18n.t("dashboard." + item);
         case "network":
           if (item["type"] == "alias") {
             return "Alias: " + item["key"];
@@ -317,34 +414,12 @@ export default {
           return item;
       }
     },
-    setDownload() {
-      var ctx = this;
-
-      nethserver.exec(
-        ["nethserver-firewall-migration/dashboard/read"],
-        {
-          action: "download",
-        },
-        null,
-        function (success) {
-          try {
-            success = JSON.parse(success);
-          } catch (e) {
-            console.error(e);
-          }
-          var blob = "data:application/octet-stream;base64," + success.data;
-          var encodedUri = encodeURI(blob);
-          $("#download-export-button")
-            .attr("download", success.filename)
-            .attr("href", encodedUri);
-        },
-        function (error, data) {
-          console.error(error, data);
-        }
-      );
-    },
     openMigrateModal() {
       $("#migrateModal").modal("show");
+    },
+    openDownloadModal() {
+      $("#downloadModal").modal("show");
+      this.prepareImageDownload();
     },
     migrate() {
       var ctx = this;
@@ -366,6 +441,41 @@ export default {
           //this will never be executed
         }
       );
+    },
+    downloadFile(path) {
+      const basename = path.replace(/.*\//, "");
+      const query = window.btoa(
+        JSON.stringify({
+          payload: "fsread1",
+          binary: "raw",
+          path: path,
+          superuser: true,
+          max_read_size: 150 * 1024 * 1024,
+          external: {
+            "content-disposition": 'attachment; filename="' + basename + '"',
+            "content-type": "application/x-xz, application/octet-stream",
+          },
+        })
+      );
+      const prefix = new URL(
+        cockpit.transport.uri("channel/" + cockpit.transport.csrf_token)
+      ).pathname;
+      const url = prefix + "?" + query;
+      return new Promise((resolve, reject) => {
+        // We download via a hidden iframe to get better control over the error cases
+        const iframe = document.createElement("iframe");
+        iframe.setAttribute("src", url);
+        iframe.setAttribute("hidden", "hidden");
+        iframe.addEventListener("load", () => {
+          const title = iframe.contentDocument.title;
+          if (title) {
+            reject(title);
+          } else {
+            resolve();
+          }
+        });
+        document.body.appendChild(iframe);
+      });
     },
   },
 };
