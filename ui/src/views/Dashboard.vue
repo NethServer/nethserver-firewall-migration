@@ -8,6 +8,7 @@
       tabindex="-1"
       role="dialog"
       data-backdrop="static"
+      data-keyboard="false"
     >
       <div class="modal-dialog">
         <div class="modal-content">
@@ -41,6 +42,7 @@
       tabindex="-1"
       role="dialog"
       data-backdrop="static"
+      data-keyboard="false"
     >
       <div class="modal-dialog">
         <div class="modal-content">
@@ -140,7 +142,11 @@
             id="download-export-button"
             class="btn btn-default"
             ref="downloadButton"
-            @click="downloadFile('/var/lib/nethserver/firewall-migration/export.tar.gz')"
+            @click="
+              downloadFile(
+                '/var/lib/nethserver/firewall-migration/export.tar.gz'
+              )
+            "
             >{{ $t("download") }}</a
           >
         </div>
@@ -301,9 +307,10 @@ export default {
           ctx.migrating = false;
           ctx.output = "";
           ctx.imageReady = true;
-          ctx.downloadFile("/usr/share/nethserver-firewall-migration-builder/nextsecurity-custom.img.gz");
-                    $("#downloadModal").modal("hide");
-
+          ctx.downloadFile(
+            "/usr/share/nethserver-firewall-migration-builder/nextsecurity-custom.img.gz"
+          );
+          $("#downloadModal").modal("hide");
         },
         function (error) {
           console.error("Can't download image");
