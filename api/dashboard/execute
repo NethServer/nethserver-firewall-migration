@@ -25,6 +25,10 @@
 # Read JSON from stdin
 data=$(cat /dev/stdin)
 
-device=$(echo $data | jq -r '.device')
+device=$(echo $data | jq -r '.device' 2>/dev/null)
 
-exec /usr/sbin/firewall-migrate "$device"
+if [ "$device" == "null" ] || [ -z "$device" ]; then
+    /usr/sbin/firewall-migrate
+else
+    exec /usr/sbin/firewall-migrate "$device"
+fi

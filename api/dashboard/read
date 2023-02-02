@@ -37,7 +37,9 @@ def export():
     return process.returncode == 0 and os.path.exists('/var/lib/nethserver/firewall-migration/export.tar.gz')
 
 def list_skipped():
-    ret = dict()
+    ret = {
+        "static": ['template_custom', 'mac_binding']
+    }
     for f in  glob.glob('/var/lib/nethserver/firewall-migration/skipped/*'):
         try:
             with open(f, 'r') as fp:
@@ -55,11 +57,6 @@ def list_done():
     for f in  glob.glob('/var/lib/nethserver/firewall-migration/done/*'):
        ret.append(os.path.basename(f))
     return ret
-
-def encode_export_archive():
-    with open("/var/lib/nethserver/firewall-migration/export.tar.gz", "rb") as archive:
-        estr = base64.b64encode(archive.read())
-        return estr.decode('utf-8')
 
 def list_disks():
     ret = list()
@@ -91,9 +88,6 @@ try:
     if action == 'export':
         exported = export()
         output = simplejson.dumps({'exported': exported, 'skipped': list_skipped(), 'done': list_done(), "disks": list_disks()})
-        print (output)
-    if action == 'download':
-        output = simplejson.dumps({'filename': 'export.tar.gz', 'data': encode_export_archive()})
         print (output)
 except Exception, e:
     print simplejson.dumps({ 'error': "%s" % e })
