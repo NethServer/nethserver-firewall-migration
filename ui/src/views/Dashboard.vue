@@ -133,6 +133,8 @@
     </div>
 
     <div v-if="exported">
+      <hr/>
+      <p class="p-description">{{$t("dashboard.export_help")}}</p>
       <div class="form-group download-exported row">
         <label class="col-sm-2 control-label" for="textInput-modal-markup">{{
           $t("dashboard.download_exported")
@@ -151,6 +153,8 @@
           >
         </div>
       </div>
+      <hr/>
+      <p class="p-description">{{$t("dashboard.usb_help")}}</p>
       <div class="form-group download-exported row">
         <label class="col-sm-2 control-label" for="textInput-modal-markup">{{
           $t("dashboard.download_usb_image")
@@ -164,6 +168,8 @@
           >
         </div>
       </div>
+      <hr/>
+      <p class="p-description">{{$t("dashboard.migrate_help")}}</p>
       <div class="form-group download-exported row">
         <label class="col-sm-2 control-label" for="textInput-modal-markup">{{
           $t("dashboard.in_place_migrate")
@@ -180,6 +186,7 @@
       <div class="row"></div>
     </div>
 
+    <hr v-if="exported"/>
     <div v-if="exported">
       <h3>{{ $t("dashboard.exported") }}</h3>
       <ul>
@@ -502,5 +509,9 @@ export default {
 }
 .fw-migration {
   padding: 5px;
+}
+
+.p-description {
+  max-width: 1024px;
 }
 </style>

@@ -48,11 +48,15 @@
         "download_usb_image": "Download live USB image",
         "select_device": "Select the target disk device",
         "in_place_migrate": "In-place migration",
-        "download_exported": "Download exported configuration",
+        "download_exported": "Download export archive",
         "migration_in_progress": "The migration process has started and will take few minutes. Please do not power off the device. At the end of the migration, current connection to Server Manager will be terminated. Wait a couple of minutes and access the new installation at ",
         "not_reversible": "By clicking the 'Migrate' button, this installation will be overwritten with a NextSecurity one. This operation is NOT reversible.",
         "error_reading_status": "Firewall status invalid",
-        "firewall_not_installed": "The firewall web interface is not installed on this machine. This migration tool can be used only to migrate a firewall installation. Please make sure to have the firewall installed before proceeding."
+        "firewall_not_installed": "The firewall web interface is not installed on this machine. This migration tool can be used only to migrate a firewall installation. Please make sure to have the firewall installed before proceeding.",
+        "export_help": "Download the export archive and upload it to an existing NextSecurity installation. With this procedure you can manually migrate to the new firewall without affecting the running one.",
+        "usb_help": "Download the image of a live USB NextSecurity installation. After the download, write the image to a USB stick and reboot the server using the stick itself. At the end of the boot process, you will have a migrated system running entirly from the USB. This procedure is usefull if you want to test everything without replacing the existing installation.",
+        "migrate_help": "This procedure will overwrite existing installation and migrate to NextSecurity. Use it only if this machine does not have any non-firewall modules installed, like mail server."
+
     },
     "docs": {
         "official_signatures": "Official ClamAV signatures use a large amount of memory. Official signatures detect many old threats but are not very effective against the latest malware.",
