@@ -122,6 +122,7 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
             $desc = $desc."_$k";
             my $ports = $service{$k};
             $ports =~ s/,/ /g;
+            $ports =~ s/:/-/g; # convert range format
             my %mrule = (
                 %common,
                 'key' => $rule->key."_$k",

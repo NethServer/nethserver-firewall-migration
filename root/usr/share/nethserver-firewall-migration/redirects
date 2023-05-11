@@ -53,6 +53,7 @@ foreach my $pf ($pdb->get_all_by_prop('type', 'pf')) {
     my $log = $pf->prop('Log') || 'none';
     # generate one rule for each source port
     for my $port (@ports) {
+        $port =~ s/:/-/g; # convert range format
         # generate one rule for each IP limitation
         for my $a (@allow) {
             push(@redirects, {
