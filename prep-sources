@@ -7,11 +7,8 @@
 # tar directory
 set -e
 
-# GitHub action doesn't support NODE_OPTIONS env variable
-if [ -z "$CI" ]; then
-    NODE_OPTIONS="--openssl-legacy-provider"
-    export NODE_OPTIONS
-fi
+NODE_OPTIONS="--openssl-legacy-provider"
+export NODE_OPTIONS
 
 pushd ui
 npm install
