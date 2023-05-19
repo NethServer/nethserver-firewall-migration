@@ -38,7 +38,7 @@ my $ovpn_status = $cdb->get_prop('openvpn@host-to-net', 'status');
 my @reflection_zones = ('lan');
 if ($reflection) {
     if (defined($ndb->blue)) { push @reflection_zones, 'blue'; }
-    if (defined($ndb->orange)) { push @reflction_zones, 'orange'; }
+    if (defined($ndb->orange)) { push @reflection_zones, 'orange'; }
     if ($ovpn_installed && $ovpn_status eq 'enabled') {
         push(@reflection_zones, 'openvpnrw');
         push(@reflection_zones, 'openvpntun');
