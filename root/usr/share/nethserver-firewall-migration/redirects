@@ -24,13 +24,27 @@ use strict;
 use warnings;
 use JSON;
 use esmith::ConfigDB;
+use esmith::NetworksDB;
 use NethServer::Firewall;
 
 my $pdb = esmith::ConfigDB->open_ro('portforward');
 my $cdb = esmith::ConfigDB->open_ro();
+my $ndb = esmith::NetworksDB->open_ro();
 my $fw = new NethServer::Firewall();
 
 my $reflection = $cdb->get_prop('firewall', 'HairpinNat') eq 'enabled' ? '1' : '0';
+my $ovpn_installed = (-f '/etc/e-smith/db/configuration/defaults/openvpn@host-to-net/status');
+my $ovpn_status = $cdb->get_prop('openvpn@host-to-net', 'status');
+my @reflection_zones = ('lan');
+if ($reflection) {
+    if (defined($ndb->blue)) { push @reflection_zones, 'blue'; }
+    if (defined($ndb->orange)) { push @reflection_zones, 'orange'; }
+    if ($ovpn_installed && $ovpn_status eq 'enabled') {
+        push(@reflection_zones, 'openvpnrw');
+        push(@reflection_zones, 'openvpntun');
+    }
+}
+
 my @redirects;
 
 my $counter = 1;
@@ -67,6 +81,7 @@ foreach my $pf ($pdb->get_all_by_prop('type', 'pf')) {
                 'src_dip' => $pf->prop('OriDst') || '',
                 'name' => $pf->prop('Description') || "pf${counter}_${ai}",
                 'reflection' => $reflection,
+                'reflection_zone' => \@reflection_zones,
                 'src_ip' => $a,
                 'log' => $log eq 'none' ? '0' : '1',
                 'key' => "pf${counter}_${ai}"
