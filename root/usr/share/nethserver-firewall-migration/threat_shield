@@ -35,11 +35,16 @@ my %ts_dns;
 # Do not produce JSON output if package is not installed
 $cdb->get('blacklist') || exit 0;
 
+my %cat_map = (
+    'yoroi_malware_level1' => 'yoroimallvl1',
+    'yoroi_malware_level2' => 'yoroimallvl2',
+    'yoroi_souspicious_level1' => 'yoroisusplvl1',
+    'yoroi_souspicious_level2' => 'yoroisusplvl2',
+    'nethesis_level3' => 'nethesislvl3'
+);
 my @ip_categories;
 foreach (split(/,/, ($cdb->get_prop('blacklist', 'Categories') || ''))) {
-    # truncate category name to overcome banip limit
-    $_ =~ s/yoroi_souspicious/yoroi_susp/;
-    push(@ip_categories, $_);
+    push(@ip_categories, $cat_map{$_});
 }
 $ts_ip{'categories'} = \@ip_categories;
 $ts_ip{'status'} = ($cdb->get_prop('blacklist', 'status') || '') eq 'enabled' ? '1' : '0';
