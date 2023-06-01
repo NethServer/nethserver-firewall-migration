@@ -9,7 +9,7 @@
     "release": {
         "version": "_RELEASE_"
     },
-    "tags": ["migration", "nextsecurity", "nethserver"],
+    "tags": ["migration", "nethsecurity", "nethserver"],
     "license": "GPL-3.0",
     "bugs": {
         "url": "https://github.com/NethServer/dev/issues"

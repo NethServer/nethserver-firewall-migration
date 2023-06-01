@@ -37,7 +37,7 @@ $cdb->get('blacklist') || exit 0;
 
 my @ip_categories;
 foreach (split(/,/, ($cdb->get_prop('blacklist', 'Categories') || ''))) {
-    # truncate category name to overcome Nextsecurity limit
+    # truncate category name to overcome banip limit
     $_ =~ s/yoroi_souspicious/yoroi_susp/;
     push(@ip_categories, $_);
 }
@@ -48,7 +48,7 @@ $ts_ip{'allow'} = [split(/,/, ($cdb->get_prop('blacklist', 'Whitelist') || ''))]
 my @bypass;
 my @dns_categories;
 foreach (split(/,/, ($cdb->get_prop('ftl', 'Categories') || ''))) {
-    # truncate category name to overcome Nextsecurity limit
+    # truncate category name to overcome banip limit
     $_ =~ s/yoroi_suspicious/yoroi_susp/;
     push(@dns_categories, $_);
 }

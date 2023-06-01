@@ -240,7 +240,7 @@ for my $b ($ndb->get_all_by_prop('type' => 'bridge')) {
                 push(@ports, {'type'=> $type, 'hwaddr' => $devices{$eth}, 'vid' => $vid});
             } else {
                 push(@ports, {'type'=> $type, 'device' => $i->key});
-                # bridge over bonds are not supported by NextSecurity:
+                # bridge over bonds are not supported by OpenWrt:
                 # the configuration will be exported, but not applied
                 if ($i->key =~ m/^bond/) {
                     $ndb_h{$i->key}{'key'} = $i->key;

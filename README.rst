@@ -2,7 +2,7 @@
 nethserver-firewall-migration
 =============================
 
-Migrate firewall configuration to NextSecurity: https://github.com/NethServer/nextsecurity
+Migrate firewall configuration to NethSecurity: https://github.com/NethServer/nethsecurity
 
 Migrate to another machine
 ==========================
@@ -15,7 +15,7 @@ Execute on NS7:
 
 Generated file can be found at :file:`/var/lib/nethserver/firewall-migration/export.tar.gz`.
 
-Access the NextSecurity installation and upload the ``export.tar.gz`` archive using SSH,
+Access the NethSecurity installation and upload the ``export.tar.gz`` archive using SSH,
 then execute:
 
 ::
@@ -28,16 +28,16 @@ In-place migration
 The ``firewall-migrate`` procedure will requires about 400MB of free disk space.
 The script will:
 
-* prepare a NextSecurity image containing the firewall export archive
+* prepare a NethSecurity image containing the firewall export archive
 * write the image to the target disk
-* reboot the system with the newly installed NextSecurity
+* reboot the system with the newly installed NethSecurity
 
-At first boot, NextSecurity will automatically import the configuration.
+At first boot, NethSecurity will automatically import the configuration.
 
 Test the image build process:
 
 - execute ``firewall-migrate``
-- if no error occurs, verify the ``/usr/share/nethserver-firewall-migration-builder/nextsecurity.img.gz`` file exists
+- if no error occurs, verify the ``/usr/share/nethserver-firewall-migration-builder/nethsecurity.img.gz`` file exists
 
 To start the migration process, pass the target device as first argument:
 

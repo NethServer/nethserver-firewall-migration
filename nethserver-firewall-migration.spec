@@ -13,7 +13,7 @@ Requires: nethserver-firewall-base
 BuildRequires: nethserver-devtools
 
 %description
-Migrate firewall configuration to Nextsecurity.
+Migrate firewall configuration to NethSecurity.
 
 %prep
 %setup -q
