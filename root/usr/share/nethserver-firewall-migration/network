@@ -46,6 +46,10 @@ sub role2zone {
         return 'lan';
     } elsif ($role eq 'red') {
         return 'wan';
+    } elsif ($role eq 'blue') {
+        return 'guest';
+    } elsif ($role eq 'orange') {
+        return 'dmz';
     }
 
     return $role;
@@ -60,9 +64,13 @@ sub role2interface {
         $ret='lan';
     } elsif ($role eq 'red') {
         $ret='wan';
+    } elsif ($role eq 'blue') {
+        $ret='guest';
+    } elsif ($role eq 'orange') {
+        $ret='dmz';
     }
 
-    return $role.$counter{$role};
+    return $ret.$counter{$role};
 }
 
 my $ndb = esmith::NetworksDB->open_ro();
@@ -311,13 +319,13 @@ for my $i ((@interfaces,@bonds)) {
 }
 
 for my $z (keys(%zones)) {
-    if ($z eq 'blue') {
+    if ($z eq 'guest') {
         push(@forwardings, {'src' => $z, 'dest' => 'wan'});
         push(@forwardings, {'src' => 'lan', 'dest' => $z});
-        if (exists($zones{'orange'})) {
-            push(@forwardings, {'src' => $z, 'dest' => 'orange'});
+        if (exists($zones{'dmz'})) {
+            push(@forwardings, {'src' => $z, 'dest' => 'dmz'});
         }
-    } elsif ($z eq 'orange') {
+    } elsif ($z eq 'dmz') {
         push(@forwardings, {'src' => $z, 'dest' => 'wan'});
         push(@forwardings, {'src' => 'lan', 'dest' => $z});
     }
