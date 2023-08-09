@@ -79,13 +79,13 @@ foreach ($hdb->get_all_by_prop('type'=>'remote')) {
         push(@addresses, {
                 'name' => $_->key,
                 'ip' => $_->prop('IpAddress'),
-                'description' => $_->prop('Description')
+                'ns_description' => $_->prop('Description')
             });
     } else {
         push(@hosts, {
                 'name' => $_->key,
                 'ip' => $_->prop('IpAddress'),
-                'description' => $_->prop('Description')
+                'ns_description' => $_->prop('Description')
             });
     }
 }

@@ -61,7 +61,7 @@ for my $r ($rdb->get_all_by_prop('type' => 'static')) {
         'target' => $r->key,
         'gateway' =>  $r->prop('Router'),
         'metric' =>  $r->prop('Metric') || 0,
-        'description' => $r->prop('Description') || '',
+        'ns_description' => $r->prop('Description') || '',
         'type' => $type
     );
 

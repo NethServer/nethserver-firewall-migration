@@ -137,7 +137,7 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
         'name' => 'ipsec'.$if_id,
 	'ifid' => $if_id,
 	'mtu' =>  '1438',
-	'zone' => 'ipsectun',
+	'zone' => 'ipsec',
 	'proto' => 'xfrm',
 	'multicast' => 'true'
     );

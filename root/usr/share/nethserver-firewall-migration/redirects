@@ -76,7 +76,7 @@ foreach my $pf ($pdb->get_all_by_prop('type', 'pf')) {
                 'src_dport' => $port,
                 'dest_port' => $pf->prop('Dst'),
                 'dest_ip' => $fw->getAddress($pf->prop('DstHost')),
-                'description' => $pf->prop('Description'),
+                'ns_description' => $pf->prop('Description'),
                 'enabled' => $pf->prop('status') eq 'enabled' ? '1' : '0',
                 'src_dip' => $pf->prop('OriDst') || '',
                 'name' => $pf->prop('Description') || "pf${counter}_${ai}",

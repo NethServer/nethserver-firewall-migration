@@ -56,7 +56,7 @@ for ($pdb->get_all()) {
     my $config = {};
     $_->prop('Target') || next;
     my $target;
-    $config->{'description'} = $_->prop('Description') || '';
+    $config->{'ns_description'} = $_->prop('Description') || '';
     my ($scheme, $host, $path, $query, $frag) = uri_split($_->prop('Target'));
     # check if host is an IP address, the regexp matches also things like 522.53.0.0
     if ($host =~ /(?<!\d)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?!\d)/g) {

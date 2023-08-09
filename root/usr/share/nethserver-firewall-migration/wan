@@ -107,7 +107,7 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
                     'sticky' => '1',
                     'src_ip' => $fw->getAddress($rule->prop('Src')),
                     'dest_ip' => $fw->getAddress($rule->prop('Dst')),
-                    'description' =>  $rule->prop('Description') || '',
+                    'ns_description' =>  $rule->prop('Description') || '',
                     'position' => $rule->prop('Position'),
                     'use_policy' => $provider,
                 });
@@ -120,7 +120,7 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
                 'sticky' => '1',
                 'src_ip' => $fw->getAddress($rule->prop('Src')),
                 'dest_ip' => $fw->getAddress($rule->prop('Dst')),
-                'description' =>  $rule->prop('Description') || '',
+                'ns_description' =>  $rule->prop('Description') || '',
                 'position' => $rule->prop('Position'),
                 'use_policy' => $provider,
             });
