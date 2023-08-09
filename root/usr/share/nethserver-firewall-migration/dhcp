@@ -142,7 +142,7 @@ foreach ($hdb->get_all_by_prop('type'=>'local')) {
         'name' => $_->key,
         'ip' => $_->prop('IpAddress'),
         'mac' => $_->prop('MacAddress'),
-        'description' => $_->prop('Description')
+        'ns_description' => $_->prop('Description')
     });
     $tot_limit++;
 }
