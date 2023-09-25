@@ -148,6 +148,7 @@ foreach ($hdb->get_all_by_prop('type'=>'local')) {
 }
 
 $general{'dhcpleasemax'} = $tot_limit;
+$general{'rebind_protection'} = '0';
 
 print(encode_json({
             'general' => \%general,
