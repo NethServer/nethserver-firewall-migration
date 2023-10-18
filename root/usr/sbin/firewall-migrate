@@ -57,7 +57,7 @@ mkdir -p $bdir
 if [ ! -f "$image" ]; then
     echo "Downloading image ... "
     release=$(curl -s -L -m 30 $base_url/latest_release)
-    img_name="nethsecurity-$release-x86-64-generic-ext4-combined-efi.img.gz"
+    img_name="nethsecurity-$release-x86-64-generic-squashfs-combined-efi.img.gz"
     curl -s -L --connect-timeout 20 -o $image $base_url/$release/targets/x86/64/$img_name
     sha=$(curl -s -L -m 30 $base_url/$release/targets/x86/64/sha256sums | grep $img_name | awk '{print $1}')
     if [ "$sha" != $(sha256sum $image | awk '{print $1}') ]; then
