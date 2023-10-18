@@ -21,86 +21,37 @@
 #
 
 set -e
+source /opt/rh/devtoolset-7/enable
 
 device=$1
 
 bdir=/usr/share/nethserver-firewall-migration-builder
-dest_dir=usr/share/migration
+dest_dir=$bdir/files/usr/share/migration
 image=$bdir/nethsecurity.img.gz
 uimage=${image%.gz}
-cimage=$bdir/nethsecurity-custom.img.gz
 base_url=https://updates.nethsecurity.nethserver.org
-
-avail=$(df -BM --output=avail / | tail -n +2 | cut -dM -f1)
-
-function cleanup()
-{
-    # Cleanup existing loopback devices
-    for lo in $(losetup -a | grep $uimage | awk -F: '{print $1;}')
-    do
-        losetup -d $lo
-    done
-    umount $bdir/mnt 2>/dev/null || true
-    rm -rf $bdir/mnt
-    rm -f $uimage
-}
-
-trap cleanup SIGTERM SIGINT EXIT
-
-if [ "$avail" -lt 400 ]; then
-    echo "Not enough free disk space"
-    exit 1
-fi
 
 mkdir -p $bdir
 
-if [ ! -f "$image" ]; then
-    echo "Downloading image ... "
-    release=$(curl -f -s -L -m 30 $base_url/latest_release)
-    img_name="nethsecurity-$release-x86-64-generic-squashfs-combined-efi.img.gz"
-    curl -s -L --connect-timeout 20 -o $image $base_url/$release/targets/x86/64/$img_name
-    sha=$(curl -s -L -m 30 $base_url/$release/targets/x86/64/sha256sums | grep $img_name | awk '{print $1}')
-    if [ "$sha" != $(sha256sum $image | awk '{print $1}') ]; then
-        rm -f $image
-        exit 1
-    fi
-fi
-
-# Make sure everything is clean
-cleanup
-
 echo -n "Exporting configuration ... "
 firewall-export
+mkdir -p $dest_dir
+cp /var/lib/nethserver/firewall-migration/export.tar.gz $dest_dir
 echo "ok"
 
-echo -n "Extracting the image ... "
-zcat -f $image > $uimage
-echo "ok"
-
-echo -n "Generating the custom image ... "
-losetup -f -P $uimage
-dev=$(losetup -a | grep $uimage | awk -F: '{print $1;}')p2
-rm -rf $bdir/mnt
-mkdir $bdir/mnt
-mount $dev $bdir/mnt
-mkdir -p $bdir/mnt/$dest_dir
-cp /var/lib/nethserver/firewall-migration/export.tar.gz $bdir/mnt/$dest_dir
-umount $bdir/mnt
-for lo in $(losetup -a | grep $uimage | awk -F: '{print $1;}')
-do
-    losetup -d $lo
-done
-echo "ok"
-
-echo -n "Compressing the custom image ... "
-gzip -c $uimage > $cimage
+echo -n "Building the image ... "
+pushd $bdir >/dev/null
+make image FILES="files/" PACKAGES="$(grep "Package: " packages/Packages | cut -d ':' -f 2 | tr '\n' ' ')" >/dev/null
+mv $bdir/bin/targets/x86/64/nethsecurity-*-generic-squashfs-combined-efi.img.gz $image
+make clean &> /dev/null
+popd >/dev/null
 echo "ok"
 
 # Apply the image
 if [ -n "$device" ]; then
     echo "Writing the image to disk ... see you on the other side!"
     # Make sure image and bins are saved in RAM
-    /bin/cp $cimage /run
+    /bin/cp $image /run
     /bin/cp /usr/bin/dd /usr/bin/zcat /usr/bin/sleep /usr/sbin/reboot /run
     # Enable sysrq
     echo 1 > /proc/sys/kernel/sysrq
@@ -111,7 +62,7 @@ if [ -n "$device" ]; then
     echo u > /proc/sysrq-trigger
     # Write the image
     # Use 64K block to minimize write errors
-    /run/zcat /run/$(basename $cimage) 2>/dev/null | /run/dd of=$device bs=1M iflag=fullblock conv=fsync status=progress
+    /run/zcat /run/$(basename $image) 2>/dev/null | /run/dd of=$device bs=1M iflag=fullblock conv=fsync status=progress
     # Try to safely reboot
     /run/sleep 1
     /run/reboot -f
