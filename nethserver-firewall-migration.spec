@@ -9,6 +9,7 @@ URL: %{url_prefix}/%{name}
 BuildArch: noarch
 
 Requires: nethserver-firewall-base
+Requires: squashfs-tools
 
 BuildRequires: nethserver-devtools
 
