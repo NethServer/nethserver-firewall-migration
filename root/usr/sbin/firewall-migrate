@@ -35,13 +35,8 @@ avail=$(df -BM --output=avail / | tail -n +2 | cut -dM -f1)
 
 function cleanup()
 {
-    # Cleanup existing loopback devices
-    for lo in $(losetup -a | grep $uimage | awk -F: '{print $1;}')
-    do
-        losetup -d $lo
-    done
-    umount $bdir/mnt 2>/dev/null || true
-    rm -rf $bdir/mnt
+    kpartx -d $uimage &>/dev/null
+    rm -rf $bdir/rootfs $bidr/part2
     rm -f $uimage
 }
 
@@ -77,19 +72,16 @@ echo -n "Extracting the image ... "
 zcat -f $image > $uimage
 echo "ok"
 
-echo -n "Generating the custom image ... "
-losetup -f -P $uimage
-dev=$(losetup -a | grep $uimage | awk -F: '{print $1;}')p2
-rm -rf $bdir/mnt
-mkdir $bdir/mnt
-mount $dev $bdir/mnt
-mkdir -p $bdir/mnt/$dest_dir
-cp /var/lib/nethserver/firewall-migration/export.tar.gz $bdir/mnt/$dest_dir
-umount $bdir/mnt
-for lo in $(losetup -a | grep $uimage | awk -F: '{print $1;}')
-do
-    losetup -d $lo
-done
+echo -n "Reading the image ... "
+mkdir -p $bdir
+dev="/dev/mapper/"$(kpartx -av $uimage 2>/dev/null| sed '2q;d' | grep -E -o 'loop[0-9]+p[0-9]')
+unsquashfs -no-progress -d $bdir/rootfs $dev >/dev/null
+echo "ok"
+echo -n "Generating the custom image (this could take a while) ... "
+mkdir -p $bdir/rootfs/$dest_dir
+cp /var/lib/nethserver/firewall-migration/export.tar.gz $bdir/rootfs/$dest_dir
+mksquashfs $bdir/rootfs $bdir/part2 -nopad -noappend -root-owned -comp xz -Xbcj x86 -b 256k -no-xattrs -no-progress > /dev/null
+dd if=$bdir/part2 of=$dev bs=1M &>/dev/null
 echo "ok"
 
 echo -n "Compressing the custom image ... "
