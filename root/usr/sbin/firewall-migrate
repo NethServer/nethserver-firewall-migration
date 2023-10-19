@@ -74,7 +74,7 @@ echo "ok"
 
 echo -n "Reading the image ... "
 mkdir -p $bdir
-dev="/dev/mapper/"$(kpartx -av $uimage 2>/dev/null| sed '2q;d' | grep -E -o 'loop[0-9]+p[0-9]')
+dev="/dev/mapper/"$(kpartx -av $uimage 2>/dev/null | grep -owE -o 'loop[0-9]+p2')
 unsquashfs -no-progress -d $bdir/rootfs $dev >/dev/null
 echo "ok"
 echo -n "Generating the custom image (this could take a while) ... "
