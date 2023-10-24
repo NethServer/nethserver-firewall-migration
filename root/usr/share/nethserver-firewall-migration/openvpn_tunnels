@@ -48,12 +48,25 @@ sub parse_config {
     my @push_options;
     my @route_options;
     my $connection_tag = 0;
+    my $secret_tag = 0;
+    my $secret;
     while(my $line = <$fh>) {
         next if ($line =~ m/^$/ or $line =~ m/\s*^#/);
         my @tmp = split(/\s+/, $line);
         my $nparts = scalar @tmp;
         my $option = shift(@tmp);
 
+        if ($option eq '<secret>') {
+            $secret_tag = 1;
+            next;
+        }
+        if ($option eq "</secret>") {
+            $secret_tag = 0;
+        }
+        if ($secret_tag) {
+            $secret .= $line;
+            next;
+        }
         # skip wan priorities on clients
         $connection_tag = 1 if ($option eq '<connection>');
         if ($option eq '</connection>') {
@@ -66,8 +79,12 @@ sub parse_config {
         next if $option =~ m/status|cd|up|down|syslog|script\-security|crl\-verify|log\-append|client\-connect|client\-disconnect|management|compression|client\-config\-dir/;
 
         if ($nparts == 1) {
-            $option =~ s/-/_/g;
-            $config{$option} = '1';
+            if (!$secret_tag && $option eq '</secret>') {
+                $config{'secret'} = $secret;
+            } else {
+                $option =~ s/-/_/g;
+                $config{$option} = '1';
+            }
         } elsif ($nparts) {
             if ($option =~ m/dh|key|cert|ca|secret/) {
                 $config{$option} = slurp($tmp[0]);
