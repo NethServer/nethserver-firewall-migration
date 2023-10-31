@@ -141,6 +141,9 @@ for ($vdb->get_all_by_prop('type', 'openvpn-tunnel-server')) {
     } else {
         $config->{'ns_public_ip'} = [];
     }
+    if ($config->{'cipher'} eq '') {
+        $config->{'cipher'} = "AES-128-CBC";
+    }
     push(@servers, $config);
 }
 
@@ -153,6 +156,9 @@ for ($vdb->get_all_by_prop('type', 'tunnel')) {
         $config->{'ns_public_ip'} = [split(/,/,$pa)];
     } else {
         $config->{'ns_public_ip'} = [];
+    }
+    if ($config->{'cipher'} eq '') {
+        $config->{'cipher'} = "AES-128-CBC";
     }
     $config->{'ns_client'} = '1';
     push(@clients, $config);
