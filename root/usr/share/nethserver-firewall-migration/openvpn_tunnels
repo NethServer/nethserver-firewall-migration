@@ -96,7 +96,17 @@ sub parse_config {
                 push(@route_options, join(" ",@tmp));
             } else {
                 $option =~ s/-/_/g;
-                $config{$option} = join(" ",@tmp);
+                if ($option eq 'dev') {
+                    # set dev_type and exclude dev
+                    my $dev_name = join(" ",@tmp);
+                    if ($dev_name =~ /^tun/) {
+                        $config{"dev_type"} = "tun";
+                    } else {
+                        $config{"dev_type"} = "tap";
+                    }
+                } else {
+                    $config{$option} = join(" ",@tmp);
+                }
             }
         }
 
@@ -123,15 +133,27 @@ if (!$vdb) {
 
 for ($vdb->get_all_by_prop('type', 'openvpn-tunnel-server')) {
     my $config = parse_config('/etc/openvpn/'.$_->key.'.conf');
-    $config->{'name'} = $_->key;
+    $config->{'ns_name'} = $_->key;
     $config->{'enabled'} = $_->prop('status') eq 'enabled' ? '1' : '0';
+    my $pa = $_->prop('PublicAddresses') || '';
+    if ($pa ne '') {
+        $config->{'ns_public_ip'} = [split(/,/,$pa)];
+    } else {
+        $config->{'ns_public_ip'} = [];
+    }
     push(@servers, $config);
 }
 
 for ($vdb->get_all_by_prop('type', 'tunnel')) {
     my $config = parse_config('/etc/openvpn/'.$_->key.'.conf');
-    $config->{'name'} = $_->key;
+    $config->{'ns_name'} = $_->key;
     $config->{'enabled'} = $_->prop('status') eq 'enabled' ? '1' : '0';
+    my $pa = $_->prop('PublicAddresses') || '';
+    if ($pa ne '') {
+        $config->{'ns_public_ip'} = [split(/,/,$pa)];
+    } else {
+        $config->{'ns_public_ip'} = [];
+    }
     $config->{'ns_client'} = '1';
     push(@clients, $config);
 }
