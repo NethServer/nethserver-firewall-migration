@@ -119,6 +119,7 @@ for my $i ($ndb->interfaces()) {
     my $bandwidth_down = $i->prop('FwInBandwidth') || '';
     if ($i->prop('type') =~ m/ethernet|bridge|vlan/ && $i->prop('role') =~ m/green|red|orange|blue/) {
         %interface = (
+            'role' => $i->prop('role'),
             'zone' => role2zone($i->prop('role')),
             'interface' => $i->prop('nslabel') ? $i->prop('nslabel') : role2interface($i->prop('role')),
             'ipaddr' => $i->prop('ipaddr') || '',
@@ -148,6 +149,7 @@ for my $i ($ndb->interfaces()) {
         my @pppoe = $ndb->get_all_by_prop('role' => 'pppoe');
         next if not @pppoe;
         %interface = (
+            'role' => $i->prop('role'),
             'zone' => role2zone('red'),
             'interface' => $i->prop('provider') ? $i->prop('provider') : role2interface('red'),
             'username' => $i->prop('user') || '',
