@@ -73,10 +73,11 @@ my %ikemap = (
 my $if_id = 10;
 for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
     my %proposal_ike = (
-        'name' => 'ike_proposal_'.$t->key,
+        'name' => $t->key.'_ike',
         'dh_group' => 'modp2048',
         'hash_algorithm' => 'sha2_256',
-        'encryption_algorithm' => 'aes256'
+        'encryption_algorithm' => 'aes256',
+        'ns_link' => $t->key
     );
     if ($t->prop('ike') eq 'custom') {
         $proposal_ike{'dh_group'} = $t->prop('ikepfsgroup');
@@ -85,10 +86,11 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
     }
    
     my %proposal_esp = (
-        'name' => 'esp_proposal_'.$t->key,
+        'name' => $t->key.'_esp',
         'dh_group' => 'modp2048',
         'hash_algorithm' => 'sha2_256',
-        'encryption_algorithm' => 'aes256'
+        'encryption_algorithm' => 'aes256',
+        'ns_link' => $t->key
     );
     if ($t->prop('esp') eq 'custom') {
         $proposal_esp{'dh_group'} = $t->prop('esppfsgroup');
@@ -101,7 +103,7 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
 
     my $ikev2 = $t->prop('ikev2') || 'yes';
     my %tunnel = (
-        'name' => 'tunnel_'.$t->key,
+        'name' => $t->key.'_tunnel',
         'local_subnet' => [split(/,/,$t->prop('leftsubnets'))],
         'remote_subnet' => [split(/,/,$t->prop('rightsubnets'))],
         'rekeytime' => ($t->prop('salifetime') || '3600')."s",
@@ -110,7 +112,8 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
         'if_id' => $if_id,
         'crypto_proposal' => $proposal_esp{'name'},
         'dpdaction' => $t->prop('dpdaction') || 'restart',
-        'ipcomp' => $t->prop('compress') eq 'no' ? 'false' : 'true'
+        'ipcomp' => $t->prop('compress') eq 'no' ? 'false' : 'true',
+        'ns_link' => $t->key
     );
 
     my $left = substr($t->prop('left'), 1);
@@ -118,11 +121,15 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
     if (($ndb->get_prop($left, 'bootproto') || '')  eq 'none') {
         $local_ip = $ndb->get_prop($left, 'ipaddr') || '%any'
     }
+    my $gateway = $t->prop('right');
+    $gateway =~ s/^%//; # remove % from &any
+
     my %remote = (
+        'ns_name' => $t->key,
         'name' => $t->key,
         'authentication_method' => 'psk',
         'local_ip' => $local_ip,
-        'gateway' => $t->prop('right'),
+        'gateway' => $gateway,
         'rekeytime' => ($t->prop('ikelifetime') || '86400')."s",
         'pre_shared_key' => $t->prop('psk'),
         'local_identifier' => $t->prop('leftid'),
@@ -135,11 +142,12 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
 
     my %interface = (
         'name' => 'ipsec'.$if_id,
-	'ifid' => $if_id,
-	'mtu' =>  '1438',
-	'zone' => 'ipsec',
-	'proto' => 'xfrm',
-	'multicast' => 'true'
+        'ifid' => $if_id,
+        'mtu' =>  '1438',
+        'zone' => 'ipsec',
+        'proto' => 'xfrm',
+        'multicast' => 'true',
+        'ns_link' => $t->key
     );
 
     # connect xfrm to physical interface, logical interface are not supported
@@ -149,8 +157,9 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
 
     for my $r (split(/,/,$t->prop('rightsubnets'))) {
         my %route = (
-	    'target' => $r,
-	    'interface' => 'ipsec'.$if_id,
+           'target' => $r,
+           'interface' => 'ipsec'.$if_id,
+           'ns_link' => $t->key
         );
         push(@routes, \%route);
     }
