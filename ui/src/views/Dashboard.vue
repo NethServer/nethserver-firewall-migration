@@ -315,7 +315,7 @@ export default {
           ctx.output = "";
           ctx.imageReady = true;
           ctx.downloadFile(
-            "/usr/share/nethserver-firewall-migration-builder/nethsecurity.img.gz"
+            "/usr/share/nethserver-firewall-migration-builder/nethsecurity-custom.img.gz"
           );
           $("#downloadModal").modal("hide");
         },
