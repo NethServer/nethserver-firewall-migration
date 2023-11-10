@@ -35,7 +35,7 @@ avail=$(df -BM --output=avail / | tail -n +2 | cut -dM -f1)
 
 function cleanup()
 {
-    kpartx -d $uimage &>/dev/null
+    kpartx -d $uimage &>/dev/null || :
     rm -rf $bdir/rootfs $bidr/part2
     rm -f $uimage
 }
@@ -55,7 +55,7 @@ if [ ! -f "$image" ]; then
     img_name="nethsecurity-$release-x86-64-generic-squashfs-combined-efi.img.gz"
     curl -s -L --connect-timeout 20 -o $image $base_url/$release/targets/x86/64/$img_name
     sha=$(curl -s -L -m 30 $base_url/$release/targets/x86/64/sha256sums | grep $img_name | awk '{print $1}')
-    if [ "$sha" != $(sha256sum $image | awk '{print $1}') ]; then
+    if [ "$sha" != "$(sha256sum $image | awk '{print $1}')" ]; then
         rm -f $image
         exit 1
     fi
