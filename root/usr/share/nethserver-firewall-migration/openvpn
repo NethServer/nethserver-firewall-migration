@@ -183,5 +183,27 @@ for ($vdb->get_all_by_prop('type', 'vpn')) {
     });
 }
 
+for ($vdb->get_all_by_prop('type', 'vpn-user')) {
+    my $status = $_->prop('status') || next;
+    my $secret;
+    my $name = $_->key;
+    $name =~ s/@.*$//;
+    if ($rw{'auth'} eq 'certificate-otp') {
+        my $sfile = "/var/lib/nethserver/home/".$name."/.2fa.secret";
+        if (-f $sfile) {
+            $secret = slurp($sfile);
+            $secret =~ s/\s$//;
+        }
+    }
+
+    push(@users, {
+            'name' => $name,
+            'enabled' => $status eq 'enabled' ? '1' : '0',
+            'ipaddr' => $_->prop('OpenVpnIp') || '',
+            'crt' => $certs{$_->key}{'crt'},
+            'key' => $certs{$_->key}{'key'},
+            '2fa' => $secret
+    });
+}
 
 print(encode_json({'users' => \@users, 'rw' => \%rw}));
