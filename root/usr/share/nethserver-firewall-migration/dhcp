@@ -70,6 +70,9 @@ foreach ($ddb->get_all_by_prop('type' => 'range')) {
     my $status = $_->prop('status') || 'disabled';
 
     my $start_ip = new NetAddr::IP($start);
+    my $net = esmith::util::computeLocalNetworkShortSpec($ipaddr,$netmask);
+    $net = new NetAddr::IP($net);
+    $start = $start_ip->numeric - $net->numeric;
     my $end_ip = new NetAddr::IP($end);
     my $limit = $end_ip->numeric - $start_ip->numeric;
     $tot_limit += $limit;
