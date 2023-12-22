@@ -53,16 +53,14 @@ my $base_url = "https://$host";
 $config{'disabled'} = ($cdb->get_prop('dedalo', 'status') || '') eq 'enabled' ? '0' : '1';
 $config{'aaa_url'} = $cdb->get_prop('dedalo', 'AaaUrl') || "$base_url/wax/aaa";
 $config{'api_url'} = $cdb->get_prop('dedalo', 'ApiUrl') || "$base_url/api";
+$config{'splash_page'} = $cdb->get_prop('dedalo', 'SplashPageUrl') || "$base_url/wings";
 $config{'unit_description'} = $cdb->get_prop('dedalo', 'Description') || '';
 $config{'hotspot_id'} = $cdb->get_prop('dedalo', 'Id') || '';
 $config{'network'} = $cdb->get_prop('dedalo', 'Network') || '';
-$config{'splash_page'} = $cdb->get_prop('dedalo', 'SplashPageUrl') || "$base_url/wings";
 $config{'unit_name'} = $cdb->get_prop('dedalo', 'UnitName') || '';
 $config{'unit_uuid'} = $cdb->get_prop('dedalo', 'Uuid') || '';
-$config{'dhcp_end'} = $cdb->get_prop('dedalo', 'DhcpEnd') || '';
-$config{'dhcp_start'} = $cdb->get_prop('dedalo', 'DhcpStart') || '';
-$config{'max_clients'} = $cdb->get_prop('dedalo', 'Maxclients') || '';
 $config{'secret'} =  NethServer::Password::store('dedalo');
+$config{'dhcp_limit'} = $cdb->get_prop('dedalo', 'DhcpEnd') || '';
 
 my @interfaces = $ndb->get_all_by_prop('role', 'hotspot');
 if (@interfaces) {
@@ -81,7 +79,6 @@ if (@interfaces) {
     } else {
         $config{'device'} = $interface;
     }
-
 } else {
     $config{'interface'} = '';
 }
