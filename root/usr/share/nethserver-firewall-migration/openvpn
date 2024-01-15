@@ -192,7 +192,6 @@ for ($vdb->get_all_by_prop('type', 'vpn-user')) {
     my $status = $_->prop('status') || next;
     my $secret;
     my $name = $_->key;
-    $name =~ s/@.*$//;
     if ($rw{'auth'} eq 'certificate-otp') {
         my $sfile = "/var/lib/nethserver/home/".$name."/.2fa.secret";
         if (-f $sfile) {
