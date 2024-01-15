@@ -104,7 +104,10 @@ if ($rw{'auth'} =~ m/password/) {
         $ldap{'user_dn'} = $ldap_config->{'UserDN'};
         $ldap{'starttls'} = $ldap_config->{'StartTls'} ? '1' : '0';
         $ldap{'user_attr'} = $ldap_config->{'isAD'} ? 'cn' : 'uid';
+        $ldap{'user_cn'} = 'cn';
         $ldap{'tls_reqcert'} = 'never';
+        $ldap{'schema'} = $ldap_config->{'isAD'} ? 'ad' : 'rfc2307';
+        $ldap{'description'} = 'Migrated remote';
     }
 }
 
