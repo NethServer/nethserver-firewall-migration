@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.4
+Version: 0.0.5
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Wed Jan 17 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.5-1
+- Refactor OpenVPN export
+- Multiple fixes
+
 * Wed Nov 15 2023 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.4-1
 - Improve OpenVPN roadwarrior export
 
