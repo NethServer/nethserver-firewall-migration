@@ -94,18 +94,18 @@ $rw_options{'push'} = \@push_options;
 $rw{'options'} = \%rw_options;
 $rw{'ca'} = \%ca;
 $rw{'auth'} = $cdb->get_prop('openvpn@host-to-net', 'AuthMode');
-$rw{'ldap'} = \%ldap;
 
-if ($rw{'auth'} =~ m/password/) {
-    my $ldap_config=decode_json(`echo '{"action": "dump"}' | /usr/libexec/nethserver/api/system-accounts-provider/read`);
-    if ($ldap_config->{'IsLocal'} == '0') {
-        $ldap{'uri'} = $ldap_config->{'LdapURI'};
-        $ldap{'base_dn'} = $ldap_config->{'BaseDN'};
-        $ldap{'user_dn'} = $ldap_config->{'UserDN'};
-        $ldap{'starttls'} = $ldap_config->{'StartTls'} ? '1' : '0';
-        $ldap{'user_attr'} = $ldap_config->{'isAD'} ? 'cn' : 'uid';
-        $ldap{'tls_reqcert'} = 'never';
-    }
+my $ldap_config=decode_json(`echo '{"action": "dump"}' | /usr/libexec/nethserver/api/system-accounts-provider/read`);
+if ($ldap_config->{'IsLocal'} == 0 or $ldap_config->{'IsLocal'} == "0") {
+    $ldap{'uri'} = $ldap_config->{'LdapURI'};
+    $ldap{'base_dn'} = $ldap_config->{'BaseDN'};
+    $ldap{'user_dn'} = $ldap_config->{'UserDN'};
+    $ldap{'starttls'} = $ldap_config->{'StartTls'} ? '1' : '0';
+    $ldap{'user_attr'} = $ldap_config->{'isAD'} ? 'cn' : 'uid';
+    $ldap{'user_cn'} = 'cn';
+    $ldap{'tls_reqcert'} = 'never';
+    $ldap{'schema'} = $ldap_config->{'isAD'} ? 'ad' : 'rfc2307';
+    $ldap{'description'} = 'Migrated remote';
 }
 
 # Parse roadwarrior config
@@ -190,12 +190,10 @@ for ($vdb->get_all_by_prop('type', 'vpn-user')) {
     my $secret;
     my $name = $_->key;
     $name =~ s/@.*$//;
-    if ($rw{'auth'} eq 'certificate-otp') {
-        my $sfile = "/var/lib/nethserver/home/".$name."/.2fa.secret";
-        if (-f $sfile) {
-            $secret = slurp($sfile);
-            $secret =~ s/\s$//;
-        }
+    my $sfile = "/var/lib/nethserver/home/".$name."/.2fa.secret";
+    if (-f $sfile) {
+        $secret = slurp($sfile);
+        $secret =~ s/\s$//;
     }
 
     push(@users, {
@@ -204,8 +202,9 @@ for ($vdb->get_all_by_prop('type', 'vpn-user')) {
             'ipaddr' => $_->prop('OpenVpnIp') || '',
             'crt' => $certs{$_->key}{'crt'},
             'key' => $certs{$_->key}{'key'},
+            'password' => $passwords{$name} || '',
             '2fa' => $secret
     });
 }
 
-print(encode_json({'users' => \@users, 'rw' => \%rw}));
+print(encode_json({'users' => \@users, 'rw' => \%rw, 'ldap' => \%ldap}));
