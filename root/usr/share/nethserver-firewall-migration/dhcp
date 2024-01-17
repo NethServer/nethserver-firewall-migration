@@ -116,6 +116,8 @@ foreach ($ddb->get_all_by_prop('type' => 'range')) {
         "limit" => $limit,
         "leasetime" => $ltime."m",
         "domain" => $_->prop('DhcpDomain') || '',
+        "dhcpv4" => ($status eq 'disabled') ? "disabled" : "server",
+        "dhcpv6" => "disabled",
         "dhcp_option" => \@options,
         "type" => $type
     );
