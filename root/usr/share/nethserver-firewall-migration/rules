@@ -50,13 +50,13 @@ sub rename_zone {
     } elsif ($zone eq '$FW') {
         return [''];
     } elsif ($zone eq 'ovpn') {
-        return ['openvpnrw', 'openvpntun'];
+        return ['rwopenvpn', 'openvpn'];
     } elsif ($zone eq 'ivpn') {
         return ['ipsectun'];
     } elsif ($zone eq 'ovpn,ivpn') {
-        return ['openvpnrw', 'openvpntun', 'ipsectun'];
+        return ['rwopenvpn', 'openvpn', 'ipsec'];
     } elsif ($zone eq 'hotsp') {
-        return ['dedalo'];
+        return ['hotspot'];
     }
     return [$zone];
 }
@@ -109,9 +109,11 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
        'position' => int($rule->prop('Position')),
        'log' => $rule->prop('Log') ne 'none' ? '1' : '0',
        'src' => rename_zone($src_zone),
-       'src_ip' => $src_addr ? $src_addr : '',
+       'src_ip' => $src_addr ? [$src_addr] : [],
        'dest' => rename_zone($dst_zone),
-       'dest_ip' => $dst_addr ? $dst_addr : '',
+       'dest_ip' => $dst_addr ? [$dst_addr] : [],
+       'ns_service' => '',
+       'ns_tag' => ['migrated'],
        %time
     );
     if ($service ne 'any') {
@@ -127,8 +129,9 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
                 %common,
                 'key' => $rule->key."_$k",
                 'name' => $desc,
-                'proto' => $k,
-                'dest_port' => $ports
+                'proto' => [$k],
+                'dest_port' => $ports,
+                'ns_service' => 'custom'
             );
             push(@tmp_rules, \%mrule);
         }
