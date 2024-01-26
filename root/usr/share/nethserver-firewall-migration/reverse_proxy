@@ -86,16 +86,11 @@ for ($pdb->get_all()) {
         if (($_->prop('AllowEncodedSlashes') || 'no') eq 'yes') {
             $config->{'location' } .= '$request_uri';
         }
-        if (($_->prop('PreserveHost') || 'yes') eq 'yes') {
-            $config->{'proxy_set_header' } = ['Host $http_host'];
-        }
         if (($_->prop('WebSockets') || 'disabled') eq 'enabled') {
              push(@slocations, {
                'location' => "/".$_->prop('WebSocketsPath'),
                'proxy_pass' => $target,
                'allow' => \@allow,
-               'proxy_http_version' => '1.1',
-               'proxy_set_header' => [ 'Upgrade $http_upgrade', 'Connection "upgrade"' ]
             });
         }
         $config->{'locations'} = \@slocations;
@@ -111,14 +106,9 @@ for ($pdb->get_all()) {
            $config->{'ssl_certificate'} = slurp($cert);
            $config->{'ssl_certificate_key'} = slurp($certs->{$cert}->{'key'});
         }
-        $config->{'ssl_session_cache'} = 'shared:SSL:32k';
-        $config->{'ssl_session_timeout'} = '64m';
-        $config->{'listen'} = ["443 ssl", "[::]:443 ssl"];
-        $config->{'nginx._lan.error_log'} = 'syslog:server=unix:/dev/log';
-        $config->{'nginx._lan.access_log'} = 'syslog:server=unix:/dev/log';
 
         push(@servers, $config);
-    } 
+    }
 }
 
 print(encode_json({'servers' => \@servers, 'locations' => \@locations}));
