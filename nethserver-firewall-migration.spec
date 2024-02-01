@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.7
+Version: 0.0.8
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Thu Feb 01 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.8-1
+- Improve port forwarding
+
 * Fri Jan 26 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.7-1
 - Improve proxy pass export
 
