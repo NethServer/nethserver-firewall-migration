@@ -216,7 +216,8 @@ for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
             'src' => $interface,
             'src_ip' => $fw->getAddress($a->prop('FwObjectNat')),
             'target' => 'SNAT',
-            'snat_ip' => $a->prop('ipaddr')
+            'snat_ip' => $a->prop('ipaddr'),
+            'dest_ip' => '0.0.0.0/0'
         );
         push(@snats, \%snat);
     }
