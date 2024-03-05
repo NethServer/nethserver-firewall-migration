@@ -29,7 +29,7 @@ dest_dir=usr/share/migration
 image=$bdir/nethsecurity.img.gz
 uimage=${image%.gz}
 cimage=$bdir/nethsecurity-custom.img.gz
-base_url=https://updates.nethsecurity.nethserver.org
+base_url=https://updates.nethsecurity.nethserver.org/stable
 
 avail=$(df -BM --output=avail / | tail -n +2 | cut -dM -f1)
 
