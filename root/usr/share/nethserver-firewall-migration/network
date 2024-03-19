@@ -337,6 +337,7 @@ for my $z (keys(%zones)) {
 }
 
 
+%devices = reverse %devices;
 my @ztmp = values(%zones);
 print(encode_json({
             'interfaces' => \@interfaces,
@@ -347,5 +348,6 @@ print(encode_json({
             'snats' => \@snats,
             'bridges' => \@bridges,
             'bonds' => \@bonds,
-            'skipped' => \@skipped
+            'skipped' => \@skipped,
+            'devices' => \%devices
         }));
