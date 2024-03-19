@@ -74,10 +74,15 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
     my @tmp_rules;
     my $action = $rule->prop('Action');
     my $service = $rule->prop('Service') || 'any';
-    # skip multiwan,QoS and ndpi rules
-    if ($action =~ m/^provider|class;/ or $service =~ m/^ndpi;/) {
+    # skip QoS and ndpi rules and log them
+    if ($action =~ m/^class;/ or $service =~ m/^ndpi;/) {
         $rules_h{$rule->key}{'key'} = $rule->key;
         push(@skipped, $rules_h{$rule->key});
+        next;
+    }
+    # skip multiwan rules: these rules will be exported from wan script
+    if ($action =~ m/^provider;/) {
+        $rules_h{$rule->key}{'key'} = $rule->key;
         next;
     }
     my $src_zone = '';
