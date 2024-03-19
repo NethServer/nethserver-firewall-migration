@@ -41,6 +41,21 @@ sub slurp {
     return $data;
 }
 
+sub role2zone {
+    my $role = shift;
+    if ($role eq 'loc') {
+        return 'lan';
+    } elsif ($role eq 'net') {
+        return 'wan';
+    } elsif ($role eq 'blue') {
+        return 'guest';
+    } elsif ($role eq 'orange') {
+        return 'dmz';
+    }
+    return $role;
+}
+
+
 my $cdb = esmith::ConfigDB->open_ro();
 my $fdb = esmith::ConfigDB->open_ro('fwrules');
 my $ndb = esmith::NetworksDB->open_ro();
@@ -105,8 +120,8 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
                     'proto' => $k,
                     'dest_port' => $service{$k},
                     'sticky' => '1',
-                    'src_ip' => $fw->getAddress($rule->prop('Src')),
-                    'dest_ip' => $fw->getAddress($rule->prop('Dst')),
+                    'src_ip' => role2zone($fw->getAddress($rule->prop('Src'))),
+                    'dest_ip' => role2zone($fw->getAddress($rule->prop('Dst'))),
                     'ns_description' =>  $rule->prop('Description') || '',
                     'position' => $rule->prop('Position'),
                     'use_policy' => $provider,
@@ -118,8 +133,8 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
                 'proto' => 'all',
                 'dest_port' => '',
                 'sticky' => '1',
-                'src_ip' => $fw->getAddress($rule->prop('Src')),
-                'dest_ip' => $fw->getAddress($rule->prop('Dst')),
+                'src_ip' => role2zone($fw->getAddress($rule->prop('Src'))),
+                'dest_ip' => role2zone($fw->getAddress($rule->prop('Dst'))),
                 'ns_description' =>  $rule->prop('Description') || '',
                 'position' => $rule->prop('Position'),
                 'use_policy' => $provider,
