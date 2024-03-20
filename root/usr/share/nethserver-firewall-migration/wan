@@ -41,6 +41,21 @@ sub slurp {
     return $data;
 }
 
+sub role2zone {
+    my $role = shift;
+    if ($role eq 'loc') {
+        return 'lan';
+    } elsif ($role eq 'net') {
+        return 'wan';
+    } elsif ($role eq 'blue') {
+        return 'guest';
+    } elsif ($role eq 'orange') {
+        return 'dmz';
+    }
+    return $role;
+}
+
+
 my $cdb = esmith::ConfigDB->open_ro();
 my $fdb = esmith::ConfigDB->open_ro('fwrules');
 my $ndb = esmith::NetworksDB->open_ro();
@@ -50,6 +65,9 @@ my @providers;
 my @rules;
 my %general;
 my %devices;
+my @skipped;
+
+my %rules_h = esmith::ConfigDB->as_hash('fwrules');
 
 for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
     my $addr_file = '/sys/class/net/'.$i->key.'/address';
@@ -93,42 +111,14 @@ for my $provider ($ndb->get_all_by_prop('type' => 'provider')) {
 for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
     my $action = $rule->prop('Action');
     if ($action =~ /^provider;(.*)$/) {
-        my $provider = $1;
-        my $proto = 'any';
-        my $dest_port = 'any';
-       if (($rule->prop('Service') || 'any') ne 'any') {
-            my %service = $fw->getPorts($rule->prop('Service'));
-            # generate one rule for each protocol
-            foreach my $k (keys(%service)) {
-                push(@rules, {
-                    'name' => $rule->key."_$k",
-                    'proto' => $k,
-                    'dest_port' => $service{$k},
-                    'sticky' => '1',
-                    'src_ip' => $fw->getAddress($rule->prop('Src')),
-                    'dest_ip' => $fw->getAddress($rule->prop('Dst')),
-                    'ns_description' =>  $rule->prop('Description') || '',
-                    'position' => $rule->prop('Position'),
-                    'use_policy' => $provider,
-                });
-            }
-        } else {
-            push(@rules, {
-                'name' => $rule->key,
-                'proto' => 'all',
-                'dest_port' => '',
-                'sticky' => '1',
-                'src_ip' => $fw->getAddress($rule->prop('Src')),
-                'dest_ip' => $fw->getAddress($rule->prop('Dst')),
-                'ns_description' =>  $rule->prop('Description') || '',
-                'position' => $rule->prop('Position'),
-                'use_policy' => $provider,
-            });
-        }
+        $rules_h{$rule->key}{'key'} = $rule->key;
+        push(@skipped, $rules_h{$rule->key});
+        next;
     }
 }
 
 print(encode_json({
+            'skipped' => \@skipped,
             'providers' => \@providers,
             'rules' => \@rules,
             'general' => \%general,

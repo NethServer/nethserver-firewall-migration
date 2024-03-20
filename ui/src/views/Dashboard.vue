@@ -424,6 +424,22 @@ export default {
           } else {
             return item;
           }
+        case "wan":
+          line =
+              this.$i18n.t("dashboard.divert") +
+              " - " +
+              this.$i18n.t("dashboard.source") +
+              ": " +
+              this.formatTarget(item["Src"]) +
+              " " +
+              this.$i18n.t("dashboard.destination") +
+              ": " +
+              this.formatTarget(item["Dst"]) +
+              " " +
+              this.$i18n.t("dashboard.provider") +
+              ": " +
+              item["Action"].replace("provider;", "");
+          return line;
         default:
           return item;
       }
