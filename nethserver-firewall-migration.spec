@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.12
+Version: 0.0.13
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Thu Apr 04 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.13-1
+- Improve WAN export
+
 * Tue Mar 19 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.12-1
 - Export device name/hwaddr map
 
