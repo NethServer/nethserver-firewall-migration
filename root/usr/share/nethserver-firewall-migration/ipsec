@@ -75,26 +75,28 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
     my %proposal_ike = (
         'name' => $t->key.'_ike',
         'dh_group' => 'modp2048',
-        'hash_algorithm' => 'sha2_256',
+        'hash_algorithm' => 'sha256',
         'encryption_algorithm' => 'aes256',
         'ns_link' => $t->key
     );
     if ($t->prop('ike') eq 'custom') {
         $proposal_ike{'dh_group'} = $t->prop('ikepfsgroup');
         $proposal_ike{'hash_algorithm'} = $t->prop('ikehash');
+        $proposal_ike{'hash_algorithm'} =~ s/sha2_/sha/;
         $proposal_ike{'encryption_algorithm'} = $t->prop('ikecipher');
     }
    
     my %proposal_esp = (
         'name' => $t->key.'_esp',
         'dh_group' => 'modp2048',
-        'hash_algorithm' => 'sha2_256',
+        'hash_algorithm' => 'sha256',
         'encryption_algorithm' => 'aes256',
         'ns_link' => $t->key
     );
     if ($t->prop('esp') eq 'custom') {
         $proposal_esp{'dh_group'} = $t->prop('esppfsgroup');
         $proposal_esp{'hash_algorithm'} = $t->prop('esphash');
+        $proposal_esp{'hash_algorithm'} =~ s/sha2_/sha/;
         $proposal_esp{'encryption_algorithm'} = $t->prop('espcipher');
     }
     if ($t->prop('pfs') eq 'no') {
@@ -106,7 +108,7 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
         'name' => $t->key.'_tunnel',
         'local_subnet' => [split(/,/,$t->prop('leftsubnets'))],
         'remote_subnet' => [split(/,/,$t->prop('rightsubnets'))],
-        'rekeytime' => ($t->prop('salifetime') || '3600')."s",
+        'rekeytime' => ($t->prop('salifetime') || '3600'),
         'startaction' => 'start',
         'closeaction' => 'none',
         'if_id' => $if_id,
@@ -130,7 +132,7 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
         'authentication_method' => 'psk',
         'local_ip' => $local_ip,
         'gateway' => $gateway,
-        'rekeytime' => ($t->prop('ikelifetime') || '86400')."s",
+        'rekeytime' => ($t->prop('ikelifetime') || '86400'),
         'pre_shared_key' => $t->prop('psk'),
         'local_identifier' => $t->prop('leftid'),
         'remote_identifier' => $t->prop('rightid'),
