@@ -89,11 +89,36 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
     my $src_addr = $fw->getAddress($rule->prop('Src'), 1);
     if ($src_addr) {
          ($src_zone, $src_addr) = split(/:/,$fw->getZone($src_addr));
+         # make sure src_addr is always an array reference
+         if ($src_addr) {
+             # explode arrays
+             if ($src_addr =~ m/,/) {
+                 my @tmp = split(/,/,$src_addr);
+                 $src_addr = \@tmp;
+             } else {
+                 $src_addr = [ $src_addr ];
+             }
+         } else {
+             $src_addr = []
+         }
+ 
     } 
     my $dst_zone = '';
     my $dst_addr = $fw->getAddress($rule->prop('Dst'), 1);
     if ($dst_addr) {
          ($dst_zone, $dst_addr) = split(/:/,$fw->getZone($dst_addr));
+         # make sure dst_addr is always an array reference
+         if ($dst_addr) {
+             # explode arrays
+             if ($dst_addr =~ m/,/) {
+                 my @tmp = split(/,/,$dst_addr);
+                 $dst_addr = \@tmp;
+             } else {
+                 $dst_addr = [ $dst_addr ];
+             }
+         } else {
+             $dst_addr = []
+         }
     }
     my %time;
     if ($rule->prop('Time')) {
@@ -114,9 +139,9 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
        'position' => int($rule->prop('Position')),
        'log' => $rule->prop('Log') ne 'none' ? '1' : '0',
        'src' => rename_zone($src_zone),
-       'src_ip' => $src_addr ? [$src_addr] : [],
+       'src_ip' => $src_addr,
        'dest' => rename_zone($dst_zone),
-       'dest_ip' => $dst_addr ? [$dst_addr] : [],
+       'dest_ip' => $dst_addr,
        'ns_service' => '',
        'ns_tag' => ['migrated'],
        %time
