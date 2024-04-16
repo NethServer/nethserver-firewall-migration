@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.13
+Version: 0.0.14
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,11 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Tue Apr 16 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.14-1
+- ipsec: remap hash_algorithm and salifetime (#32)
+- rules: explode src and dest addresses (#33) - nethsecurity#429
+    
+
 * Thu Apr 04 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.13-1
 - Improve WAN export
 
