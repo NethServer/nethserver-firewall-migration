@@ -104,19 +104,28 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
     }
 
     my $ikev2 = $t->prop('ikev2') || 'yes';
-    my %tunnel = (
-        'name' => $t->key.'_tunnel',
-        'local_subnet' => [split(/,/,$t->prop('leftsubnets'))],
-        'remote_subnet' => [split(/,/,$t->prop('rightsubnets'))],
-        'rekeytime' => ($t->prop('salifetime') || '3600'),
-        'startaction' => 'start',
-        'closeaction' => 'none',
-        'if_id' => $if_id,
-        'crypto_proposal' => $proposal_esp{'name'},
-        'dpdaction' => $t->prop('dpdaction') || 'restart',
-        'ipcomp' => $t->prop('compress') eq 'no' ? 'false' : 'true',
-        'ns_link' => $t->key
-    );
+    my @tunnel_names;
+    my $ti = 1;
+    for my $local (split(/,/,$t->prop('leftsubnets'))) {
+        for my $remote (split(/,/,$t->prop('rightsubnets'))) {
+            my %tunnel = (
+                'name' => $t->key.'_tunnel_'.$ti,
+                'local_subnet' => [$local],
+                'remote_subnet' => [$remote],
+                'rekeytime' => ($t->prop('salifetime') || '3600'),
+                'startaction' => 'start',
+                'closeaction' => 'none',
+                'if_id' => $if_id,
+                'crypto_proposal' => $proposal_esp{'name'},
+                'dpdaction' => $t->prop('dpdaction') || 'restart',
+                'ipcomp' => $t->prop('compress') eq 'no' ? 'false' : 'true',
+                'ns_link' => $t->key
+            );
+            push(@tunnel_names, $t->key.'_tunnel_'.$ti);
+            push(@tunnels, \%tunnel);
+            $ti++;
+        }
+    }
 
     my $left = substr($t->prop('left'), 1);
     my $local_ip = '%any';
@@ -137,7 +146,7 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
         'local_identifier' => $t->prop('leftid'),
         'remote_identifier' => $t->prop('rightid'),
         'crypto_proposal' => $proposal_ike{'name'},
-        'tunnel' => $tunnel{'name'},
+        'tunnel' => \@tunnel_names,
         'keyexchange' => $ikemap{$ikev2},
         'enabled' => $t->prop('status') eq 'enabled' ? '1' : '0'
     );
@@ -166,7 +175,6 @@ for my $t ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
         push(@routes, \%route);
     }
 
-    push(@tunnels, \%tunnel);
     push(@remotes, \%remote);
     push(@interfaces, \%interface);
     push(@proposals, \%proposal_ike);
