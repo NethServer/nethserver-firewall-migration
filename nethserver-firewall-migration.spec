@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.14
+Version: 0.0.15
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Tue Apr 23 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.15-1
+- ns-api: ipsec, create multiple children tunnels - NethServer/nethsecurity#442
+
 * Tue Apr 16 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.14-1
 - ipsec: remap hash_algorithm and salifetime (#32)
 - rules: explode src and dest addresses (#33) - nethsecurity#429
