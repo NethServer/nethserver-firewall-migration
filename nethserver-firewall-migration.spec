@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.15
+Version: 0.0.16
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Mon Apr 29 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.16-1
+- OpenVPN RW: fix migration of old users without status prop
+
 * Tue Apr 23 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.15-1
 - ns-api: ipsec, create multiple children tunnels - NethServer/nethsecurity#442
 
