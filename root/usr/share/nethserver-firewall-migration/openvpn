@@ -174,7 +174,7 @@ if ($sssd->isLdap() && $sssd->isLocalProvider()) {
 }
 
 for ($vdb->get_all_by_prop('type', 'vpn')) {
-    my $status = $_->prop('status') || next;
+    my $status = $_->prop('status') || 'enabled';
     push(@users, {
             'name' => $_->key,
             'enabled' => $status eq 'enabled' ? '1' : '0',
