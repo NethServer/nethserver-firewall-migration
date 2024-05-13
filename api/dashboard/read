@@ -38,7 +38,7 @@ def export():
 
 def list_skipped():
     ret = {
-        "static": ['template_custom', 'mac_binding']
+        "static": ['template_custom', 'mac_binding', "threat_shield_dns"]
     }
     for f in  glob.glob('/var/lib/nethserver/firewall-migration/skipped/*'):
         try:
