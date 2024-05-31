@@ -96,7 +96,8 @@ $rw{'ca'} = \%ca;
 $rw{'auth'} = $cdb->get_prop('openvpn@host-to-net', 'AuthMode');
 
 my $ldap_config=decode_json(`echo '{"action": "dump"}' | /usr/libexec/nethserver/api/system-accounts-provider/read`);
-if ($ldap_config->{'IsLocal'} == 0 or $ldap_config->{'IsLocal'} == "0") {
+if (($ldap_config->{'isLdap'} || $ldap_config->{'isAd'}) &&
+     ($ldap_config->{'IsLocal'} == 0 or $ldap_config->{'IsLocal'} == "0")) {
     $ldap{'uri'} = $ldap_config->{'LdapURI'};
     $ldap{'base_dn'} = $ldap_config->{'BaseDN'};
     $ldap{'user_dn'} = $ldap_config->{'UserDN'};
