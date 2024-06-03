@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.17
+Version: 0.0.18
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Mon Jun 03 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.18-1
+- Migration: OpenVPN Road Warrior users not visible in UI after migration - Bug NethServer/nethsecurity#559
+
 * Mon May 13 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.17-1
 - UI: explain Threat shield DNS is not migrated
 
