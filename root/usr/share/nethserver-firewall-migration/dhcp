@@ -141,15 +141,18 @@ foreach ($ddb->get_all_by_prop('type' => 'range')) {
 
 }
 
-foreach ($hdb->get_all_by_prop('type'=>'local')) {
-    $_->prop('MacAddress') || next;
-    push(@reservations, {
-        'name' => $_->key,
-        'ip' => $_->prop('IpAddress'),
-        'mac' => $_->prop('MacAddress'),
-        'ns_description' => $_->prop('Description')
-    });
-    $tot_limit++;
+if ($tot_limit > 0) {
+    foreach ($hdb->get_all_by_prop('type'=>'local')) {
+        $_->prop('MacAddress') || next;
+        push(@reservations, {
+            'name' => $_->key,
+            'ip' => $_->prop('IpAddress'),
+            'mac' => $_->prop('MacAddress'),
+            'ns_description' => $_->prop('Description')
+        });
+        $tot_limit++;
+    }
+    $general{'dhcpleasemax'} = $tot_limit;
 }
 
 $general{'dhcpleasemax'} = $tot_limit;
