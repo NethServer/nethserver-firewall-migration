@@ -101,12 +101,15 @@ if (($ldap_config->{'isLdap'} || $ldap_config->{'isAD'}) &&
     $ldap{'uri'} = $ldap_config->{'LdapURI'};
     $ldap{'base_dn'} = $ldap_config->{'BaseDN'};
     $ldap{'user_dn'} = $ldap_config->{'UserDN'};
-    $ldap{'starttls'} = $ldap_config->{'StartTls'} ? '1' : '0';
+    $ldap{'start_tls'} = $ldap_config->{'StartTls'} ? '1' : '0';
     $ldap{'user_attr'} = $ldap_config->{'isAD'} ? 'cn' : 'uid';
-    $ldap{'user_cn'} = 'cn';
+    $ldap{'user_cn'} = $ldap_config->{'isAD'} ? 'sAMAccountName' : 'cn';
     $ldap{'tls_reqcert'} = 'never';
     $ldap{'schema'} = $ldap_config->{'isAD'} ? 'ad' : 'rfc2307';
-    $ldap{'description'} = 'Migrated remote';
+    if ($ldap_config->{'BindDN'} and $ldap_config->{'BindPassword'}) {
+        $ldap{'bind_dn'} = $ldap_config->{'BindDN'};
+        $ldap{'bind_password'} = $ldap_config->{'BindPassword'};
+    }
     if ($ldap_config->{'isAD'}) {
        # Remove 'DC=' and split the components
        my $base_dn = $ldap_config->{'BaseDN'};
