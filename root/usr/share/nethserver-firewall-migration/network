@@ -125,9 +125,11 @@ for my $i ($ndb->interfaces()) {
             'interface' => $i->prop('nslabel') ? $i->prop('nslabel') : role2interface($i->prop('role')),
             'ipaddr' => $i->prop('ipaddr') || '',
             'netmask' => $i->prop('netmask') || '',
-            'proto' => $i->prop('bootproto') eq 'dhcp' ? 'dhcp' : 'static',
-            'gateway' => $i->prop('gateway') ? $i->prop('gateway') : ''
+            'proto' => ($i->prop('bootproto') && $i->prop('bootproto') eq 'dhcp') ? 'dhcp' : 'static'
         );
+        if ($i->prop('role') eq 'red') {
+            $interface{'gateway'} = $i->prop('gateway') ? $i->prop('gateway') : '';
+        }
         if ($i->prop('type') eq 'ethernet') {
             $interface{'hwaddr'} = $devices{$i->key} || '';
         } elsif ($i->prop('type') eq 'bridge') {
@@ -186,10 +188,11 @@ for my $a ($ndb->get_all_by_prop('type' => 'alias')) {
     my %alias = (
         'proto' => 'static',
         'ipaddr' => $a->prop('ipaddr'),
-        'netmask' => $a->prop('netmask'),
-        'gateway' => $a->prop('gateway') ? $a->prop('gateway') : ''
+        'netmask' => $a->prop('netmask')
     );
-
+    if ($parent->prop('role') eq 'red') {
+        $alias{'gateway'} = $a->prop('gateway') ? $a->prop('gateway') : '';
+    }
     if ($parent->prop('type') eq 'ethernet') {
         $alias{'hwaddr'} = $devices{$device};
     } elsif ($parent->prop('type') =~ m/bridge|bond/) {
@@ -289,13 +292,16 @@ for my $b ($ndb->get_all_by_prop('type' => 'bond')) {
         'ipaddr' => $b->prop('ipaddr') || '',
         'netmask' => $b->prop('netmask') || '',
         'proto' => ($b->prop('bootproto') || '') eq 'dhcp' ? 'dhcp' : 'static',
-        'gateway' => $b->prop('gateway') ? $b->prop('gateway') : '',
         'name' => $b->key,
         'zone' => ''
     );
     if ($b->prop('role') =~ m/green|red|orange|blue/) {
         $bond{'zone'} = role2zone($b->prop('role'));
     }
+    if ($b->prop('role') eq 'red') {
+        $bond{'gateway'} = $b->prop('gateway') ? $b->prop('gateway') : '';
+    }
+
     push(@bonds, \%bond);
 }
 
