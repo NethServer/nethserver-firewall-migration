@@ -117,6 +117,12 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
     }
 }
 
+# if there is only one provider enabled,
+# make sure to disable the multiwan
+if (scalar(@providers) <= 1) {
+    @providers = ();
+}
+
 print(encode_json({
             'skipped' => \@skipped,
             'providers' => \@providers,
