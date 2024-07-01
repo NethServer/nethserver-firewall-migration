@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.18
+Version: 0.0.19
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,12 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Mon Jul 01 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.19-1
+- Migration: remove gateway from non-red interfaces - Bug NethServer/nethsecurity#612
+- Migration: disable multiWAN when there is only one provider - Bug NethServer/nethsecurity#613
+- Enhance LDAP remote database authentication - NethServer/nethsecurity#602
+- Migration: user import regression with remote AD - Bug NethServer/nethsecurity#609
+
 * Mon Jun 03 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.18-1
 - Migration: OpenVPN Road Warrior users not visible in UI after migration - Bug NethServer/nethsecurity#559
 
