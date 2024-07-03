@@ -102,8 +102,8 @@ if (($ldap_config->{'isLdap'} || $ldap_config->{'isAD'}) &&
     $ldap{'base_dn'} = $ldap_config->{'BaseDN'};
     $ldap{'user_dn'} = $ldap_config->{'UserDN'};
     $ldap{'start_tls'} = $ldap_config->{'StartTls'} ? '1' : '0';
-    $ldap{'user_attr'} = $ldap_config->{'isAD'} ? 'cn' : 'uid';
-    $ldap{'user_cn'} = $ldap_config->{'isAD'} ? 'sAMAccountName' : 'cn';
+    $ldap{'user_attr'} = $ldap_config->{'isAD'} ? 'sAMAccountName' : 'uid';
+    $ldap{'user_display_attr'} = $ldap_config->{'isAD'} ? 'displayName' : 'cn';
     $ldap{'tls_reqcert'} = 'never';
     $ldap{'schema'} = $ldap_config->{'isAD'} ? 'ad' : 'rfc2307';
     if ($ldap_config->{'BindDN'} and $ldap_config->{'BindPassword'}) {
