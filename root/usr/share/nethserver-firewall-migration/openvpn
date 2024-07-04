@@ -115,8 +115,6 @@ if (($ldap_config->{'isLdap'} || $ldap_config->{'isAD'}) &&
        my $base_dn = $ldap_config->{'BaseDN'};
        $base_dn =~ s/DC=//g;
        my @components = split(/,/, $base_dn);
-       # Remove the first component to get the realm part
-       shift @components;
        my $realm = join('.', @components);
        $ldap{'user_bind_dn'} = "%u\@$realm";
     }
