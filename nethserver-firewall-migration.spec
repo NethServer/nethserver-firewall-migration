@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.19
+Version: 0.0.20
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Fri Aug 23 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.20-1
+- Improve LDAP configuration and authentication consistency  - NethServer/nethsecurity#627
+- Fix image download URL for subscriptions (#40)
+
 * Mon Jul 01 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.19-1
 - Migration: remove gateway from non-red interfaces - Bug NethServer/nethsecurity#612
 - Migration: disable multiWAN when there is only one provider - Bug NethServer/nethsecurity#613
