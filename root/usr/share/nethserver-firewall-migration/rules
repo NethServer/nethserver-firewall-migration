@@ -57,6 +57,10 @@ sub rename_zone {
         return ['rwopenvpn', 'openvpn', 'ipsec'];
     } elsif ($zone eq 'hotsp') {
         return ['hotspot'];
+    } elsif ($zone eq 'blue') {
+        return ['guest'];
+    } elsif ($zone eq 'orange') {
+        return ['dmz'];
     }
     return [$zone];
 }
