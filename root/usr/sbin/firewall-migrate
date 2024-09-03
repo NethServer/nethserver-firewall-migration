@@ -30,9 +30,9 @@ image=$bdir/nethsecurity.img.gz
 uimage=${image%.gz}
 cimage=$bdir/nethsecurity-custom.img.gz
 base_url=https://updates.nethsecurity.nethserver.org/stable
-system_id=$(config getprop subscription SystemId)
-secret=$(config getprop subscription Secret)
-api_url=$(config getprop subscription ApiUrl)
+system_id=$(/sbin/e-smith/config getprop subscription SystemId)
+secret=$(/sbin/e-smith/config getprop subscription Secret)
+api_url=$(/sbin/e-smith/config getprop subscription ApiUrl)
 
 avail=$(df -BM --output=avail / | tail -n +2 | cut -dM -f1)
 
