@@ -150,7 +150,7 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
        'ns_tag' => ['migrated'],
        %time
     );
-    if ($service ne 'any') {
+    if ($service !~ 'any') { # match any and any+
         my %service = $fw->getPorts($service);
         # generate one rule for each protocol
         foreach my $k (keys(%service)) {
@@ -175,7 +175,7 @@ for my $rule ($fdb->get_all_by_prop('type' => 'rule')) {
             'key' => $rule->key,
             "name" => $rule->prop('Description') || $rule->key."_migrated",
             'proto' => 'all',
-            'dest_port' => ''
+            'ns_service' => '*'
         );
         push(@tmp_rules, \%mrule);
     }
