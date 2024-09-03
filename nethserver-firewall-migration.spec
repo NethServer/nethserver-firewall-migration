@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.20
+Version: 0.0.21
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,10 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Tue Sep 03 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.21-1
+- Migration: firewall rules with "Any" service migrate incorrectly as empty "Custom Service" - Bug NethServer/nethsecurity#727
+- Migration: firewall rules not converted to guest zone - Bug NethServer/nethsecurity#726
+
 * Fri Aug 23 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.20-1
 - Improve LDAP configuration and authentication consistency  - NethServer/nethsecurity#627
 - Fix image download URL for subscriptions (#40)
