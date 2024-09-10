@@ -198,7 +198,7 @@ for ($vdb->get_all_by_prop('type', 'vpn')) {
 }
 
 for ($vdb->get_all_by_prop('type', 'vpn-user')) {
-    my $status = $_->prop('status') || next;
+    my $status = $_->prop('status') || 'enabled';
     my $secret;
     my $name = $_->key;
     $name =~ s/@.*$//;
