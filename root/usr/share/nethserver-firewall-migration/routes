@@ -55,8 +55,8 @@ for my $i ($ndb->get_all_by_prop('type' => 'ethernet')) {
 
 
 for my $r ($rdb->get_all_by_prop('type' => 'static')) {
-    my $interface = $r->prop('Device');;
-    my $type = $ndb->get_prop($interface, 'type');
+    my $interface = $r->prop('Device') || '';
+    my $type = $ndb->get_prop($interface, 'type') || '';
     my %route = (
         'target' => $r->key,
         'gateway' =>  $r->prop('Router'),
