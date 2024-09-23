@@ -114,6 +114,7 @@ if [ -n "$device" ]; then
     echo 3 > /proc/sys/vm/drop_caches
     # Mount all filesystems in read-only
     echo u > /proc/sysrq-trigger
+    sleep 1
     # Write the image
     # Use 64K block to minimize write errors
     /run/zcat /run/$(basename $cimage) 2>/dev/null | /run/dd of=$device bs=1M iflag=fullblock conv=fsync status=progress
