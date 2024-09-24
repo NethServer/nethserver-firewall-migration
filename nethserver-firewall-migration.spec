@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 0.0.21
+Version: 1.0.0
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,11 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Tue Sep 24 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.0-1
+- routes: suppress warning if device is not set
+- firewall-migrate: sleep before image write (#45), avoid kernel corruption on in-place upgrade
+- openvpn: do not ignore users without 'status' prop coming from NS6 (#44)
+
 * Tue Sep 03 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 0.0.21-1
 - Migration: firewall rules with "Any" service migrate incorrectly as empty "Custom Service" - Bug NethServer/nethsecurity#727
 - Migration: firewall rules not converted to guest zone - Bug NethServer/nethsecurity#726
