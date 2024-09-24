@@ -52,7 +52,7 @@ sub rename_zone {
     } elsif ($zone eq 'ovpn') {
         return ['rwopenvpn', 'openvpn'];
     } elsif ($zone eq 'ivpn') {
-        return ['ipsectun'];
+        return ['ipsec'];
     } elsif ($zone eq 'ovpn,ivpn') {
         return ['rwopenvpn', 'openvpn', 'ipsec'];
     } elsif ($zone eq 'hotsp') {
