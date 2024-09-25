@@ -157,15 +157,13 @@ while( my $line = <$fh>) {
     my ($status, $expiration, $revoke, $serial, $unk, $cn) = split(/\t/,$line);
     next if $status ne 'V';
 
-    $cn =~ s/^\s+|\s+$//g;
-    my @tmp = split(/\//, $cn);
-    @tmp = split(/=/,$tmp[6]);
-    $cn = $tmp[1];
-
-    $certs{$cn} = {
-        'crt' => slurp("/var/lib/nethserver/certs/$cn.crt"),
-        'key' => slurp("/var/lib/nethserver/certs/$cn.key")
-    };
+    if ($cn =~ m/\/CN=([^\/]+)/) {
+        $cn = $1;
+        $certs{$cn} = {
+            'crt' => slurp("/var/lib/nethserver/certs/$cn.crt"),
+            'key' => slurp("/var/lib/nethserver/certs/$cn.key")
+        };
+    }
 }
 close $fh;
 
