@@ -62,7 +62,7 @@ sub rename_zone {
     } elsif ($zone eq 'orange') {
         return ['dmz'];
     }
-    return [$zone];
+    return ['*'];
 }
 
 
