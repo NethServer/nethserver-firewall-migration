@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 1.0.0
+Version: 1.0.1
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,13 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Wed Sep 25 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.1-1
+- Migration: OpenVPN Road Warrior certificate not exported if CN contains the dot char - Bug NethServer/nethsecurity#794
+- Migration: FlashStart not enabled on guest/blue interface - Bug NethServer/nethsecurity#792
+- Migration: rules with custom zones not correctly migrated - Bug NethServer/nethsecurity#789
+- Migration: wrong zone for OpenVPN and IPSec custom rules - Bug NethServer/nethsecurity#788
+- Migration: incorrect reflection_zone and IPsec settings in port forward rule - Bug NethServer/nethsecurity#787
+
 * Tue Sep 24 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.0-1
 - routes: suppress warning if device is not set
 - firewall-migrate: sleep before image write (#45), avoid kernel corruption on in-place upgrade
