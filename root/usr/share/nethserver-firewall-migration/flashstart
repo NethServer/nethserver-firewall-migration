@@ -31,8 +31,13 @@ sub role2zone {
         return 'lan';
     } elsif ($role eq 'red') {
         return 'wan';
+    } elsif ($role eq 'hotsp') {
+        return 'hotspot';
+    } elsif ($role eq 'blue') {
+        return 'guest';
+    } elsif ($role eq 'orange') {
+        return 'dmz';
     }
-
     return $role;
 }
 
