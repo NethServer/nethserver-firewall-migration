@@ -43,10 +43,10 @@ my $cdb = esmith::ConfigDB->open_ro();
 
 my %ssh;
 
-my $password_auth = $cdb->get_prop('sshd', 'PasswordAuthentication') eq 'yes' ? 1 : 0;
+my $password_auth = $cdb->get_prop('sshd', 'PasswordAuthentication') eq 'yes' ? 'on' : 'off';
 my $root_login = $cdb->get_prop('sshd', 'PermitRootLogin') eq 'yes' ? 1 : 0;
 $ssh{'PasswordAuth'} = $password_auth;
-$ssh{'RootPasswordAuth'} = ($password_auth && $root_login) ? '1' : 0;
+$ssh{'RootPasswordAuth'} = ($password_auth && $root_login) ? 'on' : 'off';
 $ssh{'Port'} = $cdb->get_prop('sshd', 'TCPPort');
 $ssh{'MaxAuthTries'} =  $cdb->get_prop('sshd', 'MaxAuthTries');
 $ssh{'GatewayPorts'} = 1; # always enable forwards
