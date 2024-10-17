@@ -39,25 +39,27 @@ my $ovpnrw_status = $cdb->get_prop('openvpn@host-to-net', 'status');
 my $ovpntun_enabled = 0;
 my $ipsec_enabled = 0;
 
-foreach my $tunnel ($vdb->get_all_by_prop('type' => 'openvpn-tunnel-server')) {
-    my $status = $tunnel->prop('status') || 'disabled';
-    if ($status eq 'enabled') {
-        $ovpntun_enabled = 1;
-        last;
+if ($vdb) {
+    foreach my $tunnel ($vdb->get_all_by_prop('type' => 'openvpn-tunnel-server')) {
+        my $status = $tunnel->prop('status') || 'disabled';
+        if ($status eq 'enabled') {
+            $ovpntun_enabled = 1;
+            last;
+        }
     }
-}
-foreach my $tunnel ($vdb->get_all_by_prop('type' => 'tunnel')) {
-    my $status = $tunnel->prop('status') || 'disabled';
-    if ($status eq 'enabled') {
-        $ovpntun_enabled = 1;
-        last;
+    foreach my $tunnel ($vdb->get_all_by_prop('type' => 'tunnel')) {
+        my $status = $tunnel->prop('status') || 'disabled';
+        if ($status eq 'enabled') {
+            $ovpntun_enabled = 1;
+            last;
+        }
     }
-}
-foreach my $tunnel ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
-    my $status = $tunnel->prop('status') || 'disabled';
-    if ($status eq 'enabled') {
-        $ipsec_enabled = 1;
-        last;
+    foreach my $tunnel ($vdb->get_all_by_prop('type' => 'ipsec-tunnel')) {
+        my $status = $tunnel->prop('status') || 'disabled';
+        if ($status eq 'enabled') {
+            $ipsec_enabled = 1;
+            last;
+        }
     }
 }
 
