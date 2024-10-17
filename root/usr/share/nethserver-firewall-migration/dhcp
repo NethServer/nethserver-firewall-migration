@@ -110,12 +110,16 @@ foreach ($ddb->get_all_by_prop('type' => 'range')) {
         }
     }
 
+    my $dhcp_domain = $_->prop('DhcpDomain') || '';
+    if ($dhcp_domain ne '') {
+        push(@options, "15,$dhcp_domain");
+    }
+
     my %server = (
         "ignore" => ($status eq 'disabled') ? 1 : 0,
         "start" => $start,
         "limit" => $limit,
         "leasetime" => $ltime."m",
-        "domain" => $_->prop('DhcpDomain') || '',
         "dhcpv4" => ($status eq 'disabled') ? "disabled" : "server",
         "dhcpv6" => "disabled",
         "dhcp_option" => \@options,
