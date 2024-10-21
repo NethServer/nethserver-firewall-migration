@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 1.0.1
+Version: 1.0.2
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,12 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Mon Oct 21 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.2-1
+- Migration: DHCP domain option not honoured  - Bug NethServer/nethsecurity#857
+- Migration: root password authentication flag incorrectly displayed inside the UI - Bug NethServer/nethsecurity#806
+- Download correct image with subscription enabled
+- Do not fail export if VPN is not installed
+
 * Wed Sep 25 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.1-1
 - Migration: OpenVPN Road Warrior certificate not exported if CN contains the dot char - Bug NethServer/nethsecurity#794
 - Migration: FlashStart not enabled on guest/blue interface - Bug NethServer/nethsecurity#792
