@@ -65,7 +65,6 @@ else
     release=$(curl -f -s -L -m 30 "https://$system_id:$secret@distfeed.nethesis.it/repository/$subtype/nethsecurity/latest_release")
 fi
 
-release=$(curl -f -s -L -m 30 $base_url/latest_release)
 img_name="nethsecurity-$release-x86-64-generic-squashfs-combined-efi.img.gz"
 curl -s -L --connect-timeout 20 -o $image $base_url/$release/targets/x86/64/$img_name
 sha=$(curl -s -L -m 30 $base_url/$release/targets/x86/64/sha256sums | grep $img_name | awk '{print $1}')
