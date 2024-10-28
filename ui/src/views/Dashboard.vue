@@ -122,7 +122,7 @@
     <div v-if="uiLoaded">
       <div v-if="firewallInstalled">
         <div class="page-description">
-          <span v-html="$t('dashboard.description')"></span>
+          <span>{{ $t("dashboard.description") }}</span>
         </div>
       </div>
     </div>
