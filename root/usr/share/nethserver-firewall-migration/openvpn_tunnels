@@ -42,6 +42,9 @@ sub slurp {
 
 sub parse_config {
     my $file = shift;
+    if (! -f $file ) {
+        return undef
+    }
     open my $fh, '<', $file;
 
     my %config;
@@ -133,6 +136,10 @@ if (!$vdb) {
 
 for ($vdb->get_all_by_prop('type', 'openvpn-tunnel-server')) {
     my $config = parse_config('/etc/openvpn/'.$_->key.'.conf');
+    if (! defined $config) {
+        # skip disabled tunnels without a configuration file
+        next;
+    }
     $config->{'ns_name'} = $_->key;
     $config->{'enabled'} = $_->prop('status') eq 'enabled' ? '1' : '0';
     my $pa = $_->prop('PublicAddresses') || '';
@@ -149,6 +156,10 @@ for ($vdb->get_all_by_prop('type', 'openvpn-tunnel-server')) {
 
 for ($vdb->get_all_by_prop('type', 'tunnel')) {
     my $config = parse_config('/etc/openvpn/'.$_->key.'.conf');
+    if (! defined $config) {
+        # skip disabled tunnels without a configuration file
+        next;
+    }
     $config->{'ns_name'} = $_->key;
     $config->{'enabled'} = $_->prop('status') eq 'enabled' ? '1' : '0';
     my $pa = $_->prop('PublicAddresses') || '';
