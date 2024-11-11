@@ -78,7 +78,8 @@ foreach ($ddb->get_all_by_prop('type' => 'range')) {
     $tot_limit += $limit;
     my $ltime = int($_->prop('DhcpLeaseTime') || '86400') / 60;
     if ($ltime < 1) {
-        $ltime = 1;
+        # something is wrong, set to a minimm of 1 hour
+        $ltime = 60;
     }
     my @options;
 
