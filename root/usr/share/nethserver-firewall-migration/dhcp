@@ -77,6 +77,9 @@ foreach ($ddb->get_all_by_prop('type' => 'range')) {
     my $limit = $end_ip->numeric - $start_ip->numeric;
     $tot_limit += $limit;
     my $ltime = int($_->prop('DhcpLeaseTime') || '86400') / 60;
+    if ($ltime < 1) {
+        $ltime = 1;
+    }
     my @options;
 
     my $router = $_->prop('DhcpGatewayIP') || '';
