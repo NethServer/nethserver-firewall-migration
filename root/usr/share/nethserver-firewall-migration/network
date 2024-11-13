@@ -44,7 +44,7 @@ sub role2zone {
     my $role = shift;
     if ($role eq 'green') {
         return 'lan';
-    } elsif ($role eq 'red') {
+    } elsif ($role eq 'red' or $role eq 'pppoe') {
         return 'wan';
     } elsif ($role eq 'blue') {
         return 'guest';
