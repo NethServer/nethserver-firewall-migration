@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 1.0.2
+Version: 1.0.3
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,12 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Tue Dec 17 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.3-1
+- Migration: PPPoE alias import fails with invalid argument error - NethServer/nethsecurity#913
+- Migration: error during OpenVPN tunnel migration due to missing 'topology' key - NethServer/nethsecurity#889
+- In-place  migrate: do not drop caches (#56)
+- dhcp: improve minimum lease time
+
 * Mon Oct 21 2024 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.2-1
 - Migration: DHCP domain option not honoured  - Bug NethServer/nethsecurity#857
 - Migration: root password authentication flag incorrectly displayed inside the UI - Bug NethServer/nethsecurity#806
