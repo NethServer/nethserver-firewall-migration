@@ -122,7 +122,7 @@ for my $i ($ndb->interfaces()) {
             'name' => $i->key,
             'role' => $i->prop('role'),
             'zone' => role2zone($i->prop('role')),
-            'interface' => $i->prop('nslabel') ? $i->prop('nslabel') : role2interface($i->prop('role')),
+            'interface' => role2interface($i->prop('role')),
             'ipaddr' => $i->prop('ipaddr') || '',
             'netmask' => $i->prop('netmask') || '',
             'proto' => ($i->prop('bootproto') && $i->prop('bootproto') eq 'dhcp') ? 'dhcp' : 'static'
