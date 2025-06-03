@@ -1,6 +1,6 @@
 Summary: NethServer firewall migration module
 Name: nethserver-firewall-migration
-Version: 1.0.4
+Version: 1.0.5
 Release: 1%{?dist}
 License: GPL
 Source0: %{name}-%{version}.tar.gz
@@ -43,6 +43,9 @@ cp -a api/* %{buildroot}/usr/libexec/nethserver/api/%{name}/
 %doc COPYING
 
 %changelog
+* Tue Jun 03 2025 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.5-1
+- Export version of the tool - NethServer/nethsecurity#1238
+
 * Thu Mar 20 2025 Giacomo Sanchietti <giacomo.sanchietti@nethesis.it> - 1.0.4-1
 - Migration: MWAN policy issues with long and similar names - NethServer/nethsecurity#1067
 
