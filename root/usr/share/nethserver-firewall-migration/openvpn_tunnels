@@ -141,6 +141,7 @@ for ($vdb->get_all_by_prop('type', 'openvpn-tunnel-server')) {
         next;
     }
     $config->{'ns_name'} = $_->key;
+    $config->{'ns_name'} =~ s/\-/_/g;
     $config->{'enabled'} = $_->prop('status') eq 'enabled' ? '1' : '0';
     my $pa = $_->prop('PublicAddresses') || '';
     if ($pa ne '') {
