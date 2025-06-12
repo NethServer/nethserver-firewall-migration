@@ -148,6 +148,8 @@ while( my $line = <$fh>) {
 }
 close $fh;
 $rw{'options'}{'enabled'} = $cdb->get_prop('openvpn@host-to-net', 'status') eq 'enabled' ? '1' : '0';
+# Package has been installed but not configured
+exit 0 if $rw{'options'}{'enabled'} eq '0' && $rw{'options'}{'server'} eq '1';
 my @remote = split(",", $cdb->get_prop('openvpn@host-to-net', 'Remote') || '');
 $rw{'options'}{'ns_public_ip'} = \@remote;
 
